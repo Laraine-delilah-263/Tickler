@@ -27,12 +27,23 @@ import com.example.todolist.ui.theme.TodoListTheme
 import androidx.room.Room
 import com.example.todolist.database.AppDatabase
 
-
-
 import androidx.compose.ui.graphics.ColorFilter
 
 class MainActivity : ComponentActivity() {
+
+    // 全局数据库实例
+//    private lateinit var db: AppDatabase
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // 初始化数据库
+//        db = Room.databaseBuilder(
+//            applicationContext,
+//            AppDatabase::class.java,
+//            "todo_database" // 数据库文件名
+//        ).build()
+
         super.onCreate(savedInstanceState)
         setContent {
             TodoListTheme {
@@ -520,4 +531,8 @@ fun BottomStatusBar(
         )
     }
 }
+
+
+
+
 
