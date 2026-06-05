@@ -13,6 +13,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.todolist.R
 
+
+//头部列表
 @Composable
 fun TopNavigationBar(
     isDarkMode: Boolean,
@@ -44,18 +46,21 @@ fun TopNavigationBar(
                 color = textColor
             )
         }
-
-        TextField(
+//原生自带边框线，不用text额外设置
+        OutlinedTextField(
             value = searchText,
             onValueChange = onSearchChange,
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 32.dp)
                 .height(56.dp),
-            placeholder = { Text("搜索标题/正文...",
-                color = textColor.copy(alpha = 0.6f),
-                maxLines = 1
-            ) },
+            placeholder = {
+                Text(
+                    "搜索标题/正文...",
+                    color = textColor.copy(alpha = 0.6f),
+                    maxLines = 1
+                )
+            },
             leadingIcon = {
                 Image(
                     painter = painterResource(id = R.drawable.search),
@@ -66,11 +71,11 @@ fun TopNavigationBar(
             },
             singleLine = true,
             shape = RoundedCornerShape(24.dp),
-            colors = TextFieldDefaults.colors(
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = textColor.copy(alpha = 0.75f),
+                unfocusedBorderColor = textColor.copy(alpha = 0.35f),
                 focusedContainerColor = Color.Transparent,
-                unfocusedContainerColor = Color.Transparent,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
+                unfocusedContainerColor = Color.Transparent
             )
         )
 

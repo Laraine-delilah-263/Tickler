@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+//    id("com.google.devtools.ksp")
 }
 
 android {
@@ -13,11 +14,10 @@ android {
 
     defaultConfig {
         applicationId = "com.example.todolist"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -37,20 +37,29 @@ android {
     buildFeatures {
         compose = true
     }
+    viewBinding {
+        enable=true
+    }
 }
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.ui)
+    implementation(libs.compose.material3)
+    implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
@@ -71,5 +80,14 @@ dependencies {
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+
+//    日期控件
+    implementation("androidx.compose.material3:material3:1.3.0")
+
+    //DataStore
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
+
 
 }

@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+//分类筛选列表页面
 @Composable
 fun FilterBar(
     textColor: Color,
@@ -28,7 +29,7 @@ fun FilterBar(
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            listOf("全部", "行程备忘", "待办事项", "用车记录", "生活备忘").forEach { tag ->
+            listOf("全部标签", "行程备忘", "待办事项", "用车记录", "生活备忘").forEach { tag ->
                 FilterChip(
                     text = tag,
                     textColor = textColor,

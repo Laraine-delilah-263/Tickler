@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+
+//左侧边栏
 @Composable
 fun LeftSideBar(
     modifier: Modifier,
@@ -60,7 +62,7 @@ fun LeftSideBar(
             color = textColor
         )
         Spacer(modifier = Modifier.height(16.dp))
-        listOf("车辆记录", "出行记录", "日常清单").forEach { temp ->
+        listOf("车辆记录", "出行记录", "日常清单","语音速记","位置提醒").forEach { temp ->
             Text(
                 text = temp,
                 color = textColor,

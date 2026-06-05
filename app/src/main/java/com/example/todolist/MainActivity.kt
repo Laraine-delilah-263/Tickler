@@ -1,4 +1,3 @@
-
 package com.example.todolist
 
 import android.os.Bundle
@@ -24,13 +23,28 @@ import com.example.todolist.ui.component.NoteListArea
 import com.example.todolist.ui.component.TopNavigationBar
 import com.example.todolist.ui.theme.TodoListTheme
 
+//数据库依赖
+import androidx.room.Room
+import com.example.todolist.database.AppDatabase
+import com.example.todolist.ui.component.AddTodoDialog
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 class MainActivity : ComponentActivity() {
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             TodoListTheme {
                 var isDarkMode by remember { mutableStateOf(false) }
                 var searchText by remember { mutableStateOf("") }
+                var queryResult by remember { mutableStateOf("") }
+
+                //弹窗控制标记
+                var openAddDialog by remember { mutableStateOf(false) }
 
                 val pageBg: Color
                 val sideBarBg: Color
@@ -95,7 +109,9 @@ class MainActivity : ComponentActivity() {
                                         selectStroke = selectStrokeColor
                                     )
                                     FloatingActionButton(
-                                        onClick = {},
+                                        onClick = {
+                                            openAddDialog = true
+                                        },
                                         modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp),
                                         shape = CircleShape,
                                         containerColor = mainColor
@@ -118,10 +134,15 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+
+                //挂载弹窗
+                AddTodoDialog(
+                    show = openAddDialog,
+                    textColor = textPrimary,
+                    bgCardColor = contentCardBg, //跟随页面卡片底色
+                    closeDialog = { openAddDialog = false }
+                )
             }
         }
     }
 }
-
-
-

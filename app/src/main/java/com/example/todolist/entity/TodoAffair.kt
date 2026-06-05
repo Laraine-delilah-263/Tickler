@@ -4,6 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
+
+//事务实体
 @Entity(
     tableName = "todo_affair",
     foreignKeys = [
