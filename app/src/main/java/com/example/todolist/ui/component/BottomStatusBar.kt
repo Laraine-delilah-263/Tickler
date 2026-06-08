@@ -4,6 +4,8 @@ package com.example.todolist.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,7 +20,9 @@ fun BottomStatusBar(
     bgColor: Color,
     textColor: Color,
     dividerColor: Color,
-    isDarkMode: Boolean
+    isDarkMode: Boolean,
+    onModeChange: (Boolean) -> Unit,
+    mainColor: Color
 ) {
     Row(
         modifier = Modifier
@@ -31,6 +35,15 @@ fun BottomStatusBar(
             text = "当前模式：${if (isDarkMode) "夜间模式" else "日间模式"}",
             color = textColor,
             style = MaterialTheme.typography.bodySmall
+        )
+
+        Switch(
+            checked = isDarkMode,
+            onCheckedChange = onModeChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = mainColor,
+                checkedTrackColor = mainColor.copy(alpha = 0.5f)
+            )
         )
     }
 }

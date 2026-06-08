@@ -13,10 +13,9 @@ interface TodoAffairDao {
     @Query("SELECT * FROM todo_affair ORDER BY startTime DESC")
     fun getAllTodoList(): Flow<List<TodoAffair>>
 
-//    插入事务
+    //    插入事务
     @Insert
     suspend fun insertTodo(todo: TodoAffair): Long
-
 
 
     @Query("DELETE FROM todo_affair WHERE affId = :id")

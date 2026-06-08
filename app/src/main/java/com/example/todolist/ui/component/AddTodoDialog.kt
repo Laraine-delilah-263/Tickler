@@ -1,22 +1,15 @@
 package com.example.todolist.ui.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,18 +26,14 @@ fun AddTodoDialog(
     show: Boolean,
     textColor: Color,
     bgCardColor: Color,
-    closeDialog: () -> Unit
+    closeDialog: () -> Unit,
+    saveClick: (content: String, h: String, m: String) -> Unit
 ) {
     if (!show) return
 
-    var titleText by remember { mutableStateOf("") }
     var contentText by remember { mutableStateOf("") }
-    val dateState = rememberDatePickerState()
 
-    // 页面步骤：0=选日期，1=选时分
-    var step by remember { mutableStateOf(0) }
-
-    // 下拉数据源
+    //时分数据源
     val hourList = (0..23).map { it.toString() }
     var hourExpanded by remember { mutableStateOf(false) }
     var selectHour by remember { mutableStateOf("0") }
@@ -53,61 +42,35 @@ fun AddTodoDialog(
     var minuteExpanded by remember { mutableStateOf(false) }
     var selectMinute by remember { mutableStateOf("0") }
 
-    Dialog(onDismissRequest = {
-        step = 0
-        closeDialog()
-    }) {
+    Dialog(onDismissRequest = closeDialog) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .background(color = bgCardColor, shape = RoundedCornerShape(12.dp))
-                .padding(vertical = 16.dp, horizontal = 16.dp)
+                .padding(vertical = 16.dp, horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = if (step == 0) "第一步：选择截止日期" else "第二步：选择时分",
-                color = textColor
+            Text(text = "新增待办事务", color = textColor)
+
+            //第一行：仅内容输入，删除标题框
+            OutlinedTextField(
+                value = contentText,
+                onValueChange = { contentText = it },
+                label = { Text("事务内容", color = textColor) },
+                modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(10.dp))
 
-            // 步骤1：日期选择
-            if (step == 0) {
-                DatePicker(
-                    state = dateState,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                // 选完日期自动切时分页
-                dateState.selectedDateMillis?.let {
-                    step = 1
-                }
-            }
+//            年份选择
 
-            // 步骤2：小时+分钟下拉
-            if (step == 1) {
-                //标题输入
-                OutlinedTextField(
-                    value = titleText,
-                    onValueChange = { titleText = it },
-                    label = { Text("标题", color = textColor) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(6.dp))
 
-                //内容输入
-                OutlinedTextField(
-                    value = contentText,
-                    onValueChange = { contentText = it },
-                    label = { Text("事务内容", color = textColor) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
+            //第二行：小时+分钟同一行，下拉框限制高度
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 //小时下拉
                 ExposedDropdownMenuBox(
                     expanded = hourExpanded,
                     onExpandedChange = { hourExpanded = !hourExpanded },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.weight(1f)
                 ) {
                     OutlinedTextField(
                         value = selectHour,
@@ -119,7 +82,8 @@ fun AddTodoDialog(
                     )
                     ExposedDropdownMenu(
                         expanded = hourExpanded,
-                        onDismissRequest = { hourExpanded = false }
+                        onDismissRequest = { hourExpanded = false },
+                        modifier = Modifier.heightIn(max = 180.dp) //下拉列表限高
                     ) {
                         hourList.forEach { item ->
                             DropdownMenuItem(
@@ -132,13 +96,12 @@ fun AddTodoDialog(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(6.dp))
 
                 //分钟下拉
                 ExposedDropdownMenuBox(
                     expanded = minuteExpanded,
                     onExpandedChange = { minuteExpanded = !minuteExpanded },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.weight(1f)
                 ) {
                     OutlinedTextField(
                         value = selectMinute,
@@ -150,7 +113,8 @@ fun AddTodoDialog(
                     )
                     ExposedDropdownMenu(
                         expanded = minuteExpanded,
-                        onDismissRequest = { minuteExpanded = false }
+                        onDismissRequest = { minuteExpanded = false },
+                        modifier = Modifier.heightIn(max = 180.dp) //下拉列表限高
                     ) {
                         minuteList.forEach { item ->
                             DropdownMenuItem(
@@ -163,26 +127,21 @@ fun AddTodoDialog(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(14.dp))
             }
 
-            // 底部两个按钮垂直排布，解决按钮显示不全
-            Column {
+            //底部按钮
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Button(
                     onClick = {
-                        step = 0
+                        saveClick(contentText, selectHour, selectMinute)
                         closeDialog()
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("确认（暂不保存）")
+                    Text("添加")
                 }
-                Spacer(modifier = Modifier.height(6.dp))
                 Button(
-                    onClick = {
-                        step = 0
-                        closeDialog()
-                    },
+                    onClick = closeDialog,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("取消")

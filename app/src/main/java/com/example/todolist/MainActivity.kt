@@ -26,6 +26,7 @@ import com.example.todolist.ui.theme.TodoListTheme
 //数据库依赖
 import androidx.room.Room
 import com.example.todolist.database.AppDatabase
+import com.example.todolist.entity.TodoAffair
 import com.example.todolist.ui.component.AddTodoDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,9 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
+    //初始化数据库与Dao
+    private val db by lazy { AppDatabase.getDatabase(applicationContext) }
+    private val todoDao by lazy { db.todoDao() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +47,7 @@ class MainActivity : ComponentActivity() {
                 var searchText by remember { mutableStateOf("") }
                 var queryResult by remember { mutableStateOf("") }
 
+                val scope = rememberCoroutineScope()
                 //弹窗控制标记
                 var openAddDialog by remember { mutableStateOf(false) }
 
@@ -78,12 +83,11 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         TopNavigationBar(
-                            isDarkMode = isDarkMode,
-                            onModeChange = { isDarkMode = it },
+
                             searchText = searchText,
                             onSearchChange = { searchText = it },
                             textColor = textPrimary,
-                            mainColor = mainColor
+
                         )
                         Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                             LeftSideBar(
@@ -127,10 +131,12 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         BottomStatusBar(
+                            isDarkMode = isDarkMode,
+                            onModeChange = { isDarkMode = it },
                             bgColor = sideBarBg,
                             textColor = textPrimary,
                             dividerColor = dividerColor,
-                            isDarkMode = isDarkMode
+                            mainColor = mainColor
                         )
                     }
                 }
@@ -140,7 +146,23 @@ class MainActivity : ComponentActivity() {
                     show = openAddDialog,
                     textColor = textPrimary,
                     bgCardColor = contentCardBg, //跟随页面卡片底色
-                    closeDialog = { openAddDialog = false }
+                    closeDialog = { openAddDialog = false },
+                    saveClick = { content, hour, minute ->
+                        //IO线程插入数据库
+                        scope.launch(Dispatchers.IO) {
+                            val now = System.currentTimeMillis()
+                            //标题固定，内容填输入文字，截止时间=当天+选定时分，分类/优先级暂时null
+                            val todo = TodoAffair(
+                                title = "新建待办",
+                                detail = content,
+                                startTime = now,
+                                endTime = now + 24 * 3600_000,
+                                categoryId = null,
+                                priorityId = null
+                            )
+                            todoDao.insertTodo(todo)
+                        }
+                    }
                 )
             }
         }
