@@ -25,7 +25,10 @@ import com.example.todolist.ui.theme.TodoListTheme
 
 //数据库依赖
 import androidx.room.Room
+import com.example.todolist.dao.CategoryDao
 import com.example.todolist.database.AppDatabase
+import com.example.todolist.entity.Category
+import com.example.todolist.entity.Priority
 import com.example.todolist.entity.TodoAffair
 import com.example.todolist.ui.component.AddTodoDialog
 import kotlinx.coroutines.CoroutineScope
@@ -37,9 +40,43 @@ class MainActivity : ComponentActivity() {
     //初始化数据库与Dao
     private val db by lazy { AppDatabase.getDatabase(applicationContext) }
     private val todoDao by lazy { db.todoDao() }
+    private val categoryDao by lazy { db.categoryDao() }
+    private val priorityDao by lazy { db.priorityDao() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+//        数据库和表的创建
+//        默认初始化数据：IO协程执行，判空后再插入
+        kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            // 1. 判断分类表是否为空
+            val categoryList = categoryDao.getCategoryList()
+            if (categoryList.isEmpty()) {
+                categoryDao.insertCategory(Category(label = "日常事务"))
+            }
+
+            // 2. 判断优先级表是否为空
+            val priorityList = priorityDao.getPriorityList()
+            if (priorityList.isEmpty()) {
+                priorityDao.insertPriority(Priority(levelName = "常规"))
+            }
+
+            // 3. 判断待办表是否为空，插入第一条默认待办
+            val todoList = todoDao.getAllTodo()
+            if (todoList.isEmpty()) {
+                val now = System.currentTimeMillis()
+                val endTime = now + 24 * 3600_000
+                val todo = TodoAffair(
+                    title = "初始待办",
+                    detail = "系统默认第一条待办事项",
+                    startTime = now,
+                    endTime = endTime,
+                    categoryId = 1,
+                    priorityId = 1
+                )
+                todoDao.insertTodo(todo)
+            }
+        }
 
         setContent {
             TodoListTheme {
