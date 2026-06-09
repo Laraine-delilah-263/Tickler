@@ -26,6 +26,7 @@ import com.example.todolist.ui.theme.TodoListTheme
 //数据库依赖
 import androidx.room.Room
 import com.example.todolist.dao.CategoryDao
+import com.example.todolist.dao.TodoJoinData
 import com.example.todolist.database.AppDatabase
 import com.example.todolist.entity.Category
 import com.example.todolist.entity.Priority
@@ -45,6 +46,42 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            // 1. 分类初始化
+            val categoryList = categoryDao.getCategoryList()
+            if (categoryList.isEmpty()) {
+                categoryDao.insertCategory(Category(label = "日常事务"))
+                categoryDao.insertCategory(Category(label = "车辆出行"))
+                categoryDao.insertCategory(Category(label = "采购清单"))
+            }
+
+            // 2. 完整初始化5种优先级（紧急/重要/常规/暂缓/已完成）
+            val priorityList = priorityDao.getPriorityList()
+            if (priorityList.isEmpty()) {
+                priorityDao.insertPriority(Priority(levelName = "紧急"))
+                priorityDao.insertPriority(Priority(levelName = "重要"))
+                priorityDao.insertPriority(Priority(levelName = "常规"))
+                priorityDao.insertPriority(Priority(levelName = "暂缓"))
+                priorityDao.insertPriority(Priority(levelName = "已完成"))
+            }
+
+            // 3. 默认待办
+            val todoList = todoDao.getAllTodo()
+            if (todoList.isEmpty()) {
+                val now = System.currentTimeMillis()
+                val endTime = now + 24 * 3600_000
+                val todo = TodoAffair(
+                    title = "初始待办",
+                    detail = "系统默认第一条待办事项",
+                    startTime = now,
+                    endTime = endTime,
+                    categoryId = 1,
+                    priorityId = 3
+                )
+                todoDao.insertTodo(todo)
+            }
+        }
 
 //        数据库和表的创建
 //        默认初始化数据：IO协程执行，判空后再插入
@@ -88,6 +125,16 @@ class MainActivity : ComponentActivity() {
                 //弹窗控制标记
                 var openAddDialog by remember { mutableStateOf(false) }
 
+                // 存储数据库联查完整数据
+                var todoDataSource by remember { mutableStateOf<List<TodoJoinData>>(emptyList()) }
+
+                // 监听数据库变化，自动刷新列表
+                LaunchedEffect(Unit) {
+                    todoDao.queryTodoJoinAll().collect { list ->
+                        todoDataSource = list
+                    }
+                }
+
                 val pageBg: Color
                 val sideBarBg: Color
                 val contentCardBg: Color
@@ -120,7 +167,6 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         TopNavigationBar(
-
                             searchText = searchText,
                             onSearchChange = { searchText = it },
                             textColor = textPrimary,
@@ -143,10 +189,12 @@ class MainActivity : ComponentActivity() {
                                 Box(
                                     modifier = Modifier.weight(1f).fillMaxHeight()
                                 ) {
+//                                    传入数据库真实数据
                                     NoteListArea(
                                         cardBg = contentCardBg,
                                         textColor = textPrimary,
                                         mainColor = mainColor,
+                                        todoList=todoDataSource,
                                         selectStroke = selectStrokeColor
                                     )
                                     FloatingActionButton(
@@ -194,8 +242,8 @@ class MainActivity : ComponentActivity() {
                                 detail = content,
                                 startTime = now,
                                 endTime = now + 24 * 3600_000,
-                                categoryId = null,
-                                priorityId = null
+                                categoryId = 1,
+                                priorityId = 3
                             )
                             todoDao.insertTodo(todo)
                         }

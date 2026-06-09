@@ -18,4 +18,15 @@ interface TodoAffairDao {
     @Query("SELECT * FROM todo_affair")
     suspend fun getAllTodo():List<TodoAffair>
 
+//    添加三表联查sql
+    @Query("""
+        SELECT t.*, p.levelName, c.label
+        FROM todo_affair t
+        LEFT JOIN priority p ON t.priorityId = p.prioId
+        LEFT JOIN category c ON t.categoryId = c.cataId
+        ORDER BY t.endTime ASC
+    """
+    )
+fun queryTodoJoinAll(): Flow<List<TodoJoinData>>
+
 }
