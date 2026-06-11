@@ -7,17 +7,28 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.todolist.entity.Category
+import com.example.todolist.entity.Priority
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 //分类筛选列表页面
 @Composable
 fun FilterBar(
     textColor: Color,
     mainColor: Color,
-    dividerColor: Color
+    dividerColor: Color,
+    categoryList:List<Category>,//分类标签数据
+    priorityList:List<Priority>//等级标签数据
 ) {
+    var selectedCateTag by remember { mutableStateOf("全部分类")}
+    var selectedPrioTag by remember { mutableStateOf("全部分类")}
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -29,11 +40,19 @@ fun FilterBar(
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            listOf("全部标签", "行程备忘", "待办事项", "用车记录", "生活备忘").forEach { tag ->
+            FilterChip(
+                text = "全部分类",
+                textColor = if(selectedCateTag == "全部分类") Color.White else textColor,
+                bgColor = if(selectedCateTag == "全部分类") mainColor else mainColor.copy(alpha = 0.1f),
+                onClick = { selectedCateTag  = "全部分类" }
+            )
+//            数据库循环渲染分类
+            categoryList.forEach { cate->
                 FilterChip(
-                    text = tag,
-                    textColor = textColor,
-                    selectColor = mainColor
+                    text = cate.label,
+                    textColor = if(selectedCateTag == cate.label) Color.White else textColor,
+                    bgColor = if(selectedCateTag == cate.label) mainColor else mainColor.copy(alpha = 0.1f),
+                    onClick = { selectedCateTag = cate.label }
                 )
             }
         }
@@ -44,11 +63,20 @@ fun FilterBar(
                 .padding(vertical = 5.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            listOf("全部等级", "紧急", "重要", "常规", "暂缓").forEach { level ->
+            // 固定全部选项
+            FilterChip(
+                text = "全部等级",
+                textColor = if(selectedPrioTag == "全部等级") Color.White else textColor,
+                bgColor = if(selectedPrioTag == "全部等级") mainColor else mainColor.copy(alpha = 0.1f),
+                onClick = { selectedPrioTag = "全部等级" }
+            )
+            // 数据库循环渲染优先级
+            priorityList.forEach { prio ->
                 FilterChip(
-                    text = level,
-                    textColor = textColor,
-                    selectColor = mainColor
+                    text = prio.levelName,
+                    textColor = if(selectedPrioTag == prio.levelName) Color.White else textColor,
+                    bgColor = if(selectedPrioTag == prio.levelName) Color.White else mainColor.copy(alpha = 0.1f),
+                    onClick = { selectedPrioTag = prio.levelName }
                 )
             }
         }
@@ -61,12 +89,13 @@ fun FilterBar(
 fun FilterChip(
     text: String,
     textColor: Color,
-    selectColor: Color
+    bgColor: Color,
+    onClick:()->Unit,
 ) {
     Box(
         modifier = Modifier
             .background(
-                color = selectColor.copy(alpha = 0.1f),
+                color = bgColor,
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 12.dp, vertical = 6.dp)

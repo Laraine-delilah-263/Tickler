@@ -47,42 +47,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
-            // 1. 分类初始化
-            val categoryList = categoryDao.getCategoryList()
-            if (categoryList.isEmpty()) {
-                categoryDao.insertCategory(Category(label = "日常事务"))
-                categoryDao.insertCategory(Category(label = "车辆出行"))
-                categoryDao.insertCategory(Category(label = "采购清单"))
-            }
-
-            // 2. 完整初始化5种优先级（紧急/重要/常规/暂缓/已完成）
-            val priorityList = priorityDao.getPriorityList()
-            if (priorityList.isEmpty()) {
-                priorityDao.insertPriority(Priority(levelName = "紧急"))
-                priorityDao.insertPriority(Priority(levelName = "重要"))
-                priorityDao.insertPriority(Priority(levelName = "常规"))
-                priorityDao.insertPriority(Priority(levelName = "暂缓"))
-                priorityDao.insertPriority(Priority(levelName = "已完成"))
-            }
-
-            // 3. 默认待办
-            val todoList = todoDao.getAllTodo()
-            if (todoList.isEmpty()) {
-                val now = System.currentTimeMillis()
-                val endTime = now + 24 * 3600_000
-                val todo = TodoAffair(
-                    title = "初始待办",
-                    detail = "系统默认第一条待办事项",
-                    startTime = now,
-                    endTime = endTime,
-                    categoryId = 1,
-                    priorityId = 3
-                )
-                todoDao.insertTodo(todo)
-            }
-        }
-
 //        数据库和表的创建
 //        默认初始化数据：IO协程执行，判空后再插入
         kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
@@ -120,18 +84,34 @@ class MainActivity : ComponentActivity() {
                 var isDarkMode by remember { mutableStateOf(false) }
                 var searchText by remember { mutableStateOf("") }
                 var queryResult by remember { mutableStateOf("") }
-
+//                待办数据列表
                 val scope = rememberCoroutineScope()
                 //弹窗控制标记
                 var openAddDialog by remember { mutableStateOf(false) }
 
                 // 存储数据库联查完整数据
                 var todoDataSource by remember { mutableStateOf<List<TodoJoinData>>(emptyList()) }
+                var allCategory by remember { mutableStateOf<List<Category>>(emptyList()) }
 
-                // 监听数据库变化，自动刷新列表
+                var allPriority by remember { mutableStateOf<List<Priority>>(emptyList()) }
+
+                // 监听数据库变化，自动刷新事务列表
                 LaunchedEffect(Unit) {
                     todoDao.queryTodoJoinAll().collect { list ->
                         todoDataSource = list
+                    }
+                }
+
+//                加载全部分类数据
+                LaunchedEffect(Unit) {
+                    categoryDao.getAllCategory().collect { cateList ->
+                        allCategory = cateList
+                    }
+                }
+
+//                优先级
+                LaunchedEffect(Unit) {
+                    priorityDao.getAllPriority().collect{ prioList->allPriority = prioList
                     }
                 }
 
@@ -170,7 +150,6 @@ class MainActivity : ComponentActivity() {
                             searchText = searchText,
                             onSearchChange = { searchText = it },
                             textColor = textPrimary,
-
                         )
                         Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                             LeftSideBar(
@@ -184,7 +163,9 @@ class MainActivity : ComponentActivity() {
                                 FilterBar(
                                     textColor = textPrimary,
                                     mainColor = mainColor,
-                                    dividerColor = dividerColor
+                                    dividerColor = dividerColor,
+                                    categoryList = allCategory,
+                                    priorityList = allPriority
                                 )
                                 Box(
                                     modifier = Modifier.weight(1f).fillMaxHeight()
@@ -197,6 +178,7 @@ class MainActivity : ComponentActivity() {
                                         todoList=todoDataSource,
                                         selectStroke = selectStrokeColor
                                     )
+//                                    新建笔记按钮
                                     FloatingActionButton(
                                         onClick = {
                                             openAddDialog = true
@@ -230,20 +212,22 @@ class MainActivity : ComponentActivity() {
                 AddTodoDialog(
                     show = openAddDialog,
                     textColor = textPrimary,
+                    categoryList = allCategory,//分类数据
+                    priorityList = allPriority,
                     bgCardColor = contentCardBg, //跟随页面卡片底色
                     closeDialog = { openAddDialog = false },
-                    saveClick = { content, hour, minute ->
+                    saveClick = { titleInput,content,cateId,prioId, fullEndTimeMs ->
                         //IO线程插入数据库
                         scope.launch(Dispatchers.IO) {
                             val now = System.currentTimeMillis()
                             //标题固定，内容填输入文字，截止时间=当天+选定时分，分类/优先级暂时null
                             val todo = TodoAffair(
-                                title = "新建待办",
+                                title = titleInput,
                                 detail = content,
                                 startTime = now,
-                                endTime = now + 24 * 3600_000,
-                                categoryId = 1,
-                                priorityId = 3
+                                endTime = fullEndTimeMs,
+                                categoryId = cateId,
+                                priorityId = prioId
                             )
                             todoDao.insertTodo(todo)
                         }

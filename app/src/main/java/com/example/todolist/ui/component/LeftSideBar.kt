@@ -35,7 +35,7 @@ fun LeftSideBar(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        listOf("我的置顶", "批量管理", "自定义标签").forEach { func ->
+        listOf( "批量管理", "自定义标签").forEach { func ->
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -62,7 +62,7 @@ fun LeftSideBar(
             color = textColor
         )
         Spacer(modifier = Modifier.height(16.dp))
-        listOf("车辆记录", "出行记录", "日常清单","语音速记","位置提醒").forEach { temp ->
+        listOf( "日常清单","语音速记","位置提醒").forEach { temp ->
             Text(
                 text = temp,
                 color = textColor,

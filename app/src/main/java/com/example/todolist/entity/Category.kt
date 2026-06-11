@@ -8,4 +8,6 @@ import androidx.room.PrimaryKey
 data class Category(
     @PrimaryKey(autoGenerate = true) val cataId: Long = 0,
     val label: String
+
+
 )

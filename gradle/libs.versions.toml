@@ -19,7 +19,9 @@ room = "2.7.0"
 appcompat = "1.6.1"
 material = "1.10.0"
 activityKtx = "1.8.0"
-constraintlayout = "2.1.4" # Kotlin2.x适配最新Room2.7.0
+constraintlayout = "2.1.4"
+material3 = "1.4.0"
+foundationLayout = "1.11.2" # Kotlin2.x适配最新Room2.7.0
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -57,6 +59,8 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 
 
 
