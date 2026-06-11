@@ -46,7 +46,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 //        数据库和表的创建
 //        默认初始化数据：IO协程执行，判空后再插入
         kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
@@ -81,34 +80,55 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TodoListTheme {
+//                输入搜索的临时文本
+                var searchkeyword by remember { mutableStateOf("") }
+                var queryResult by remember { mutableStateOf("") }
                 var isDarkMode by remember { mutableStateOf(false) }
                 var searchText by remember { mutableStateOf("") }
-                var queryResult by remember { mutableStateOf("") }
 //                待办数据列表
                 val scope = rememberCoroutineScope()
                 //弹窗控制标记
                 var openAddDialog by remember { mutableStateOf(false) }
-
                 // 存储数据库联查完整数据
                 var todoDataSource by remember { mutableStateOf<List<TodoJoinData>>(emptyList()) }
                 var allCategory by remember { mutableStateOf<List<Category>>(emptyList()) }
-
                 var allPriority by remember { mutableStateOf<List<Priority>>(emptyList()) }
-
+//                标签筛选
+                var selectCategory by remember { mutableStateOf("全部分类") }
+                var selectPriority by remember { mutableStateOf("全部等级") }
+//                根据搜索文本过滤待办列表
+                val filterTodoList=remember(searchText,todoDataSource,selectCategory,selectPriority) {
+                    var list=todoDataSource
+//                    1.搜索文本过滤
+                    if (searchText.isBlank()){
+                        todoDataSource
+                    }else{
+                        val keyword=searchText.trim().lowercase()
+                        todoDataSource.filter { todo->
+                            todo.title.lowercase().contains(keyword)||todo.detail.lowercase().contains(keyword)                        }
+                    }
+//                    2.分类过滤
+                    if (selectCategory != "全部分类") {
+                        list = list.filter { it.label == selectCategory }
+                    }
+                    // 3. 优先级过滤
+                    if (selectPriority != "全部等级") {
+                        list = list.filter { it.levelName == selectPriority }
+                    }
+                    list
+                }
                 // 监听数据库变化，自动刷新事务列表
                 LaunchedEffect(Unit) {
                     todoDao.queryTodoJoinAll().collect { list ->
                         todoDataSource = list
                     }
                 }
-
 //                加载全部分类数据
                 LaunchedEffect(Unit) {
                     categoryDao.getAllCategory().collect { cateList ->
                         allCategory = cateList
                     }
                 }
-
 //                优先级
                 LaunchedEffect(Unit) {
                     priorityDao.getAllPriority().collect{ prioList->allPriority = prioList
@@ -165,7 +185,12 @@ class MainActivity : ComponentActivity() {
                                     mainColor = mainColor,
                                     dividerColor = dividerColor,
                                     categoryList = allCategory,
-                                    priorityList = allPriority
+                                    priorityList = allPriority,
+                                    onCategorySelect={selectCategory=it},
+                                    onPrioritySelect={selectPriority=it},
+//                                    监听高亮
+                                    currentSelectCategory = selectCategory,
+                                    currentSelectPriority = selectPriority
                                 )
                                 Box(
                                     modifier = Modifier.weight(1f).fillMaxHeight()
@@ -175,7 +200,8 @@ class MainActivity : ComponentActivity() {
                                         cardBg = contentCardBg,
                                         textColor = textPrimary,
                                         mainColor = mainColor,
-                                        todoList=todoDataSource,
+//                                        todoList=todoDataSource,
+                                        todoList=filterTodoList,
                                         selectStroke = selectStrokeColor
                                     )
 //                                    新建笔记按钮
@@ -188,8 +214,8 @@ class MainActivity : ComponentActivity() {
                                         containerColor = mainColor
                                     ) {
                                         Image(
-                                            painter = painterResource(id = R.drawable.build),
-                                            contentDescription = "新建笔记",
+                                            painter = painterResource(id = R.drawable.add),
+                                            contentDescription = "新建事务",
                                             modifier = Modifier.size(24.dp),
                                             colorFilter = ColorFilter.tint(Color.White)
                                         )

@@ -79,7 +79,7 @@ fun NoteListArea(
                     )
                     Row(
                         modifier = Modifier
-                            .padding(start = 16.dp, end = 10.dp, bottom = 10.dp)
+                            .padding(start = 16.dp, end = 16.dp, bottom = 10.dp)
                             .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween

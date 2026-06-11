@@ -24,11 +24,12 @@ fun FilterBar(
     mainColor: Color,
     dividerColor: Color,
     categoryList:List<Category>,//分类标签数据
-    priorityList:List<Priority>//等级标签数据
+    priorityList:List<Priority>,//等级标签数据
+    onCategorySelect:(String)->Unit,
+    onPrioritySelect:(String)->Unit,
+    currentSelectCategory:String,
+    currentSelectPriority:String
 ) {
-    var selectedCateTag by remember { mutableStateOf("全部分类")}
-    var selectedPrioTag by remember { mutableStateOf("全部分类")}
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -42,17 +43,17 @@ fun FilterBar(
         ) {
             FilterChip(
                 text = "全部分类",
-                textColor = if(selectedCateTag == "全部分类") Color.White else textColor,
-                bgColor = if(selectedCateTag == "全部分类") mainColor else mainColor.copy(alpha = 0.1f),
-                onClick = { selectedCateTag  = "全部分类" }
+                textColor = if(currentSelectCategory == "全部分类") Color.White else textColor,
+                bgColor = if(currentSelectCategory == "全部分类") mainColor else mainColor.copy(alpha = 0.1f),
+                onClick = { onCategorySelect("全部分类")}
             )
 //            数据库循环渲染分类
             categoryList.forEach { cate->
                 FilterChip(
                     text = cate.label,
-                    textColor = if(selectedCateTag == cate.label) Color.White else textColor,
-                    bgColor = if(selectedCateTag == cate.label) mainColor else mainColor.copy(alpha = 0.1f),
-                    onClick = { selectedCateTag = cate.label }
+                    textColor = if(currentSelectCategory == cate.label) Color.White else textColor,
+                    bgColor = if(currentSelectCategory == cate.label) mainColor else mainColor.copy(alpha = 0.1f),
+                    onClick = { onCategorySelect(cate.label )}
                 )
             }
         }
@@ -66,17 +67,17 @@ fun FilterBar(
             // 固定全部选项
             FilterChip(
                 text = "全部等级",
-                textColor = if(selectedPrioTag == "全部等级") Color.White else textColor,
-                bgColor = if(selectedPrioTag == "全部等级") mainColor else mainColor.copy(alpha = 0.1f),
-                onClick = { selectedPrioTag = "全部等级" }
+                textColor = if(currentSelectPriority == "全部等级") Color.White else textColor,
+                bgColor = if(currentSelectPriority == "全部等级") mainColor else mainColor.copy(alpha = 0.1f),
+                onClick = { onPrioritySelect ("全部等级")}
             )
             // 数据库循环渲染优先级
             priorityList.forEach { prio ->
                 FilterChip(
                     text = prio.levelName,
-                    textColor = if(selectedPrioTag == prio.levelName) Color.White else textColor,
-                    bgColor = if(selectedPrioTag == prio.levelName) Color.White else mainColor.copy(alpha = 0.1f),
-                    onClick = { selectedPrioTag = prio.levelName }
+                    textColor = if(currentSelectPriority == prio.levelName) Color.White else textColor,
+                    bgColor = if(currentSelectPriority == prio.levelName) mainColor else mainColor.copy(alpha = 0.1f),
+                    onClick = { onPrioritySelect (prio.levelName)}
                 )
             }
         }
@@ -99,7 +100,7 @@ fun FilterChip(
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 12.dp, vertical = 6.dp)
-            .clickable { }
+            .clickable (onClick = onClick)
     ) {
         Text(text = text, color = textColor)
     }

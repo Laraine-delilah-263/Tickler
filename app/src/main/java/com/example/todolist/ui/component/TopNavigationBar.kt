@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,10 @@ fun TopNavigationBar(
     textColor: Color,
 
 ) {
+
+    // 获取软键盘控制器
+    val keyboardController = LocalSoftwareKeyboardController.current
+
 //    观察输入框文本字段的值
     val todoName= remember{
         mutableSetOf("")
@@ -79,6 +84,21 @@ fun TopNavigationBar(
                     colorFilter = ColorFilter.tint(textColor.copy(alpha = 0.6f))
                 )
             },
+//            清空图标
+            trailingIcon = {
+                if (searchText.isNotBlank()){
+                    Image(
+                        painter = painterResource(id = R.drawable.cancle),
+                        contentDescription = "清空搜索框",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable{
+                                onSearchChange("")
+                            },
+                        colorFilter = ColorFilter.tint(textColor.copy(0.6f))
+                    )
+                }
+            },
             singleLine = true,//输入控制
             shape = RoundedCornerShape(24.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -89,19 +109,14 @@ fun TopNavigationBar(
             )
         )
 
-//        Spacer(modifier = Modifier.width(2.dp))
-
 //        搜索按钮
         Button(
-            onClick = { },
+            onClick = {
+                keyboardController?.hide()
+            },
             modifier = Modifier
                 .width(120.dp)
-//                .padding(end=20.dp)
                 .height(50.dp),
-//            colors= ButtonDefaults.buttonColors(
-//                containerColor = colorResource(id=R.color.blue),
-////                contentColor = (Color.White)
-//            ),
             shape = RoundedCornerShape(10.dp),
 //            border = BorderStroke(1.dp, Color.Black)
         ) {
