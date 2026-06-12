@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,17 +21,13 @@ import com.example.todolist.ui.component.LeftSideBar
 import com.example.todolist.ui.component.NoteListArea
 import com.example.todolist.ui.component.TopNavigationBar
 import com.example.todolist.ui.theme.TodoListTheme
-
 //数据库依赖
-import androidx.room.Room
-import com.example.todolist.dao.CategoryDao
 import com.example.todolist.dao.TodoJoinData
 import com.example.todolist.database.AppDatabase
 import com.example.todolist.entity.Category
 import com.example.todolist.entity.Priority
 import com.example.todolist.entity.TodoAffair
 import com.example.todolist.ui.component.AddTodoDialog
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -54,13 +49,11 @@ class MainActivity : ComponentActivity() {
             if (categoryList.isEmpty()) {
                 categoryDao.insertCategory(Category(label = "日常事务"))
             }
-
             // 2. 判断优先级表是否为空
             val priorityList = priorityDao.getPriorityList()
             if (priorityList.isEmpty()) {
                 priorityDao.insertPriority(Priority(levelName = "常规"))
             }
-
             // 3. 判断待办表是否为空，插入第一条默认待办
             val todoList = todoDao.getAllTodo()
             if (todoList.isEmpty()) {
@@ -101,10 +94,10 @@ class MainActivity : ComponentActivity() {
                     var list=todoDataSource
 //                    1.搜索文本过滤
                     if (searchText.isBlank()){
-                        todoDataSource
+                        list
                     }else{
                         val keyword=searchText.trim().lowercase()
-                        todoDataSource.filter { todo->
+                        list.filter { todo->
                             todo.title.lowercase().contains(keyword)||todo.detail.lowercase().contains(keyword)                        }
                     }
 //                    2.分类过滤
@@ -142,7 +135,6 @@ class MainActivity : ComponentActivity() {
                 val mainColor: Color
                 val dividerColor: Color
                 val selectStrokeColor: Color
-
                 if (isDarkMode) {
                     pageBg = Color(0xFF1E2229)
                     sideBarBg = Color(0xFF252A33)
@@ -202,7 +194,19 @@ class MainActivity : ComponentActivity() {
                                         mainColor = mainColor,
 //                                        todoList=todoDataSource,
                                         todoList=filterTodoList,
-                                        selectStroke = selectStrokeColor
+                                        selectStroke = selectStrokeColor,
+                                        onDeleteTodo = {targetTodoId->
+                                            scope.launch(Dispatchers.IO) {
+                                                val todo=todoDao.getTodoById(targetTodoId)
+                                                todo?.let { todoDao.deleteTodoById(targetTodoId) }
+                                            }
+                                        },
+                                        onMarkComplete={targetTodoId->
+                                            scope.launch(Dispatchers.IO) {
+                                                todoDao.markTodoFinish(targetTodoId)
+                                            }
+
+                                        }
                                     )
 //                                    新建笔记按钮
                                     FloatingActionButton(
