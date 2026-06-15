@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton
@@ -11,9 +12,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import com.example.todolist.ui.component.BottomStatusBar
 import com.example.todolist.ui.component.FilterBar
@@ -29,6 +32,7 @@ import com.example.todolist.entity.Priority
 import com.example.todolist.entity.TodoAffair
 import com.example.todolist.ui.component.AddTodoDialog
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -73,6 +77,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TodoListTheme {
+                var isSearchFocused by remember { mutableStateOf(false) }
+//                全局共享焦点
+                val searchFocusRequester = remember { FocusRequester() }
+                val keyboardController = LocalSoftwareKeyboardController.current
 //                输入搜索的临时文本
                 var searchkeyword by remember { mutableStateOf("") }
                 var queryResult by remember { mutableStateOf("") }
@@ -154,14 +162,34 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable(
+//                            消除点击波纹
+                            indication = null,
+                            interactionSource = null
+                        ){
+                            keyboardController?.hide()
+                            scope.launch {
+                                delay(80)
+                                searchFocusRequester.freeFocus()
+                            }
+                        }
+                    ,
                     color = pageBg
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         TopNavigationBar(
                             searchText = searchText,
                             onSearchChange = { searchText = it },
-                            textColor = textPrimary,
+                            textColor = textPrimary ,
+                            searchFocusRequester = searchFocusRequester,
+                            globalKeyboardController = keyboardController,
+                            globalScope = scope,
+                            onFocusChange = {newState->
+                                isSearchFocused=newState
+                            },
+                            isSearchFocused=isSearchFocused,
                         )
                         Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                             LeftSideBar(
@@ -205,7 +233,10 @@ class MainActivity : ComponentActivity() {
                                             scope.launch(Dispatchers.IO) {
                                                 todoDao.markTodoFinish(targetTodoId)
                                             }
-
+                                        },
+                                        // 拖拽排序回调：新顺序列表
+                                        onOrderChanged = { newSortList ->
+                                            // 可选：持久化排序，给 TodoAffair 增加 sortOrder 字段循环更新入库
                                         }
                                     )
 //                                    新建笔记按钮

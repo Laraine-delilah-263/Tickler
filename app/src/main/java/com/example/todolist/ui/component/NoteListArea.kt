@@ -1,5 +1,6 @@
 package com.example.todolist.ui.component
 
+import android.annotation.SuppressLint
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
@@ -8,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -17,8 +19,8 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,14 +35,19 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.painterResource
 import com.example.todolist.R
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 // 滑动枚举别名简化
 private val StartToEnd = SwipeToDismissBoxValue.StartToEnd
 private val EndToStart = SwipeToDismissBoxValue.EndToStart
+//长按拖拽
 private val Settled = SwipeToDismissBoxValue.Settled
 
 
 //待办事务列表：接收数据库联查完整数据，移除假数据
+@SuppressLint("RememberReturnType")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NoteListArea(
@@ -50,13 +57,16 @@ fun NoteListArea(
     selectStroke: Color,
     mainColor: Color,
     onDeleteTodo:(Long)-> Unit,
-    onMarkComplete:(Long)-> Unit
+    onMarkComplete:(Long)-> Unit,
+    // 拖拽排序后回调，保存新顺序
+    onOrderChanged: (List<TodoJoinData>) -> Unit
 ) {
+
 //    全局时间格式化器：年-月-日 时：分
     val dateFormatter= remember{
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
     }
-    val listScope= rememberCoroutineScope()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()

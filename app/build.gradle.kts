@@ -121,6 +121,12 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
+    dependencies {
+        implementation("sh.calvin.reorderable:reorderable:3.0.0")
+    }
 
+    implementation("androidx.compose.foundation:foundation-reorder:1.7.0")
+
+    implementation("sh.calvin.reorderable:reorderable:3.0.0")
 
 }
