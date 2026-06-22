@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.todolist.R
@@ -32,7 +33,6 @@ import com.example.todolist.util.getPriorityColor
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import androidx.compose.ui.text.style.TextDecoration
 
 // 滑动枚举别名简化
 private val StartToEnd = SwipeToDismissBoxValue.StartToEnd
@@ -50,7 +50,10 @@ fun NoteListArea(
     mainColor: Color,
     onDeleteTodo: (Long) -> Unit,
     onMarkComplete: (Long) -> Unit,
-    onOrderChanged: (List<TodoJoinData>) -> Unit
+    onOrderChanged: (List<TodoJoinData>) -> Unit,
+    batchMode: Boolean,
+    selectedIds: List<Long>,
+    onToggleSelect: (Long) -> Unit
 ) {
     val dateFormatter = remember {
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -63,14 +66,18 @@ fun NoteListArea(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(todoList, key = { it.affId }) { todo ->
-//            判断是否过期
-            val nowMs= System.currentTimeMillis()
-            val isOverdue=todo.endTime<nowMs||todo.isExpired==1
-            val isFinished=todo.isFinish==1
-            val showGrayBg=isOverdue&&!isFinished
-            // 1. 增加阈值，滑动超过距离才显示背景
+            // 过期、完成状态判断
+            val nowMs = System.currentTimeMillis()
+            val isOverdue = todo.endTime < nowMs || todo.isExpired == 1
+            val isFinished = todo.isFinish == 1
+            // 目标：过期且未完成 = 整体暗淡
+            val isDimStyle = isOverdue && !isFinished
+            // 统一透明度：正常1f，过期未完成0.55f
+            val dimAlpha = if (isDimStyle) 0.55f else 1f
+
             val swipeState = rememberSwipeToDismissBoxState(
                 confirmValueChange = { dismissValue ->
+                    if(batchMode) return@rememberSwipeToDismissBoxState false
                     when (dismissValue) {
                         StartToEnd -> {
                             onMarkComplete(todo.affId)
@@ -83,16 +90,17 @@ fun NoteListArea(
                         else -> false
                     }
                 },
-                positionalThreshold = { totalWidth -> totalWidth * 0.3f } // 滑动30%宽度触发变色
+                positionalThreshold = { totalWidth -> totalWidth * 0.3f }
             )
 
             SwipeToDismissBox(
                 state = swipeState,
+                enableDismissFromStartToEnd = !batchMode,
+                enableDismissFromEndToStart  = !batchMode,
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
                 backgroundContent = {
-                    // 修复点2：统一填充全屏背景，渐变起始色改为透明，滑动立刻可见
                     val progress = swipeState.progress
                     Box(
                         modifier = Modifier
@@ -135,18 +143,23 @@ fun NoteListArea(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(BorderStroke(1.dp, selectStroke), RoundedCornerShape(8.dp)),
+                        .border(
+                            BorderStroke(1.dp, selectStroke.copy(alpha = dimAlpha)),
+                            RoundedCornerShape(8.dp)
+                        ),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (showGrayBg) cardBg.copy(alpha = 0.6f) else cardBg),
+                        containerColor = cardBg.copy(alpha = dimAlpha)
+                    ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Column {
+                        // 截止时间文字
                         Text(
                             text = Instant
                                 .ofEpochMilli(todo.endTime)
                                 .atZone(ZoneId.systemDefault())
                                 .format(dateFormatter),
-                            color = Color.Gray.copy(alpha = 0.7f),
+                            color = Color.Gray.copy(alpha = 0.7f * dimAlpha),
                             modifier = Modifier.padding(start = 16.dp, top = 5.dp),
                             fontSize = androidx.compose.material3.MaterialTheme.typography.bodySmall.fontSize
                         )
@@ -158,27 +171,40 @@ fun NoteListArea(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                if (batchMode) {
+                                    androidx.compose.material3.Checkbox(
+                                        checked = selectedIds.contains(todo.affId),
+                                        onCheckedChange = {
+                                            // 勾选/取消，通知外层MainActivity更新选中集合
+                                            onToggleSelect(todo.affId)
+                                        },
+                                        colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = mainColor)
+                                    )
+                                }
+                                // 左侧优先级竖条同步透明度
                                 Box(
                                     modifier = Modifier
                                         .width(4.dp)
                                         .height(40.dp)
-                                        .background(getPriorityColor(todo.levelName))
+                                        .background(getPriorityColor(todo.levelName).copy(alpha = dimAlpha))
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
+                                // 标题详情文字
                                 Text(
                                     text = "${todo.title} | ${todo.detail}",
-                                    color = textColor,
+                                    color = textColor.copy(alpha = dimAlpha),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(end = 8.dp),
                                     textDecoration = if (isFinished) TextDecoration.LineThrough else TextDecoration.None
                                 )
                             }
+                            // 分类标签背景+文字同步暗淡
                             Text(
                                 text = todo.label ?: "未分类",
-                                color = Color.White,
+                                color = Color.White.copy(alpha = dimAlpha),
                                 modifier = Modifier
-                                    .background(mainColor, RoundedCornerShape(99.dp))
+                                    .background(mainColor.copy(alpha = dimAlpha), RoundedCornerShape(99.dp))
                                     .padding(horizontal = 10.dp, vertical = 3.dp)
                             )
                         }

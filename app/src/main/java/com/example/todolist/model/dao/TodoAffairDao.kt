@@ -11,9 +11,12 @@ import kotlinx.coroutines.flow.Flow
 //事务数据访问对象，对数据库的各项操作进行封装
 @Dao
 interface TodoAffairDao {
+    // 批量删除：根据affId集合删除多条待办
+    @Query("DELETE FROM todo_affair WHERE affId IN (:idList)")
+    suspend fun batchDeleteTodo(idList: List<Long>)
     // 将待办标记为已弹出过期提醒
-//    @Query("UPDATE todo_affair SET hashReminded = 1 WHERE affId = :id")
-//    suspend fun markTodoReminded(id: Long)
+    @Query("UPDATE todo_affair SET hasReminded = 1 WHERE affId = :id")
+    suspend fun markTodoReminded(id: Long)
 
     @Query("UPDATE todo_affair SET isFinish = 1 WHERE affId = :id")
     suspend fun markTodoFinish(id: Long)

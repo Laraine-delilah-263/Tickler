@@ -59,6 +59,9 @@ class MainActivity : ComponentActivity() {
             val priorityList = priorityDao.getPriorityList()
             if (priorityList.isEmpty()) {
                 priorityDao.insertPriority(Priority(levelName = "常规"))
+                priorityDao.insertPriority(Priority(levelName = "暂缓"))
+                priorityDao.insertPriority(Priority(levelName = "重要"))
+                priorityDao.insertPriority(Priority(levelName = "紧急"))
             }
             // 3. 判断待办表是否为空，插入第一条默认待办
             val todoList = todoDao.getAllTodo()
@@ -71,7 +74,8 @@ class MainActivity : ComponentActivity() {
                     startTime = now,
                     endTime = endTime,
                     categoryId = 1,
-                    priorityId = 1
+                    priorityId = 1,
+                    hasReminded = 0
                 )
                 todoDao.insertTodo(todo)
             }
@@ -79,12 +83,16 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TodoListTheme {
+//              批量管理模式开关
+                var batchManageMode by remember { mutableStateOf(false) }
+//              存储选中的待办affId
+                val selectedTodoIds = remember { mutableStateListOf<Long>() }
 //                新增标签弹窗
                 var openAddCateDialog by remember { mutableStateOf(false) }
 //                弹窗状态
                 var showExpireDialog by remember { mutableStateOf(false) }
                 var currentExpireTodo by remember { mutableStateOf<TodoJoinData?>(null) }
-                var remindedTodoIds = remember { mutableStateListOf<Long>() }
+//                var remindedTodoIds = remember { mutableStateListOf<Long>() }
                 var isSearchFocused by remember { mutableStateOf(false) }
 //                全局共享焦点
                 val searchFocusRequester = remember { FocusRequester() }
@@ -109,17 +117,14 @@ class MainActivity : ComponentActivity() {
                 val filterTodoList =
                     remember(searchText, todoDataSource, selectCategory, selectPriority) {
                         var list = todoDataSource
-//                    1.搜索文本过滤
-                        if (searchText.isBlank()) {
-                            list
-                        } else {
+                        // 1.搜索文本过滤，必须赋值回list
+                        if (searchText.isNotBlank()) {
                             val keyword = searchText.trim().lowercase()
-                            list.filter { todo ->
-                                todo.title.lowercase().contains(keyword) || todo.detail.lowercase()
-                                    .contains(keyword)
+                            list = list.filter { todo ->
+                                todo.title.lowercase().contains(keyword) || todo.detail.lowercase().contains(keyword)
                             }
                         }
-//                    2.分类过滤
+                        // 2.分类过滤
                         if (selectCategory != "全部分类") {
                             list = list.filter { it.label == selectCategory }
                         }
@@ -127,7 +132,7 @@ class MainActivity : ComponentActivity() {
                         if (selectPriority != "全部等级") {
                             list = list.filter { it.levelName == selectPriority }
                         }
-                        list
+                        return@remember list
                     }
                 // 监听数据库变化，自动刷新事务列表
                 LaunchedEffect(Unit) {
@@ -161,12 +166,12 @@ class MainActivity : ComponentActivity() {
                             todo.endTime < nowTime
                                     && todo.isExpired == 0
                                     && todo.isFinish==0
-                                    && !remindedTodoIds.contains(todo.affId)
+                                    && todo.hasReminded == 0
                         }
                         if (expireTodo != null) {
                             currentExpireTodo = expireTodo
                             showExpireDialog = true
-                            remindedTodoIds.add(expireTodo.affId)
+                            todoDao.markTodoReminded(expireTodo.affId)
                         }
                         delay(1000)
                     }
@@ -235,7 +240,11 @@ class MainActivity : ComponentActivity() {
                                 textColor = textPrimary,
                                 mainColor = mainColor,
                                 dividerColor = dividerColor,
-                                onAddTagClick = { openAddCateDialog = true }
+                                onAddTagClick = { openAddCateDialog = true },
+                                onBatchClick = {
+                                    batchManageMode = !batchManageMode
+                                    selectedTodoIds.clear()
+                                }
                             )
                                     Column {
                                 FilterBar(
@@ -277,6 +286,15 @@ class MainActivity : ComponentActivity() {
                                         // 拖拽排序回调：新顺序列表
                                         onOrderChanged = { newSortList ->
                                             // 可选：持久化排序，给 TodoAffair 增加 sortOrder 字段循环更新入库
+                                        },
+                                        batchMode = batchManageMode,
+                                        selectedIds = selectedTodoIds,
+                                        onToggleSelect = { todoId ->
+                                            if (selectedTodoIds.contains(todoId)) {
+                                                selectedTodoIds.remove(todoId)
+                                            } else {
+                                                selectedTodoIds.add(todoId)
+                                            }
                                         }
                                     )
 //                                    新建笔记按钮
@@ -306,7 +324,25 @@ class MainActivity : ComponentActivity() {
                             bgColor = sideBarBg,
                             textColor = textPrimary,
                             dividerColor = dividerColor,
-                            mainColor = mainColor
+                            mainColor = mainColor,
+                            batchMode = batchManageMode,
+                            selectedCount = selectedTodoIds.size,
+                            onBatchDelete = {
+                                // 先复制一份选中ID快照，避免过程中集合变化
+                                val idsToDelete = selectedTodoIds.toList()
+                                scope.launch(Dispatchers.IO) {
+//                                    println("批量删除选中ID：$idsToDelete")
+                                    if (idsToDelete.isNotEmpty()) {
+                                        todoDao.batchDeleteTodo(idsToDelete)
+//                                        println("批量删除执行完成")
+                                    }
+                                    // 数据库删除完成后，再切回主线程清空UI状态
+                                    scope.launch(Dispatchers.Main) {
+                                        batchManageMode = false
+                                        selectedTodoIds.clear()
+                                    }
+                                }
+                            }
                         )
                     }
                 }
@@ -330,7 +366,8 @@ class MainActivity : ComponentActivity() {
                                 startTime = now,
                                 endTime = fullEndTimeMs,
                                 categoryId = cateId,
-                                priorityId = prioId
+                                priorityId = prioId,
+                                hasReminded = 0
                             )
                             todoDao.insertTodo(todo)
                         }

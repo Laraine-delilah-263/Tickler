@@ -21,7 +21,8 @@ fun LeftSideBar(
     textColor: Color,
     mainColor: Color,
     dividerColor: Color,
-    onAddTagClick:()-> Unit
+    onAddTagClick:()-> Unit,
+    onBatchClick: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -47,8 +48,9 @@ fun LeftSideBar(
                     )
                     .padding(vertical = 12.dp, horizontal = 16.dp)
                     .clickable {
-                        if(func=="自定义标签"){
-                            onAddTagClick()
+                        when(func){
+                            "批量管理" -> onBatchClick()
+                            "自定义标签"->onAddTagClick()
                         }
                     }
             ) {

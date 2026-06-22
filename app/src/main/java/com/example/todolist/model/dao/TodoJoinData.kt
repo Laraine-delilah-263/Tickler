@@ -15,5 +15,6 @@ data class TodoJoinData(
     val priorityId: Long?,
     // 联查带出的关联文本
     val levelName: String?,    // 优先级名称：紧急/重要...
-    val label: String? // 分类名称
+    val label: String?, // 分类名称
+    val hasReminded: Int
 )

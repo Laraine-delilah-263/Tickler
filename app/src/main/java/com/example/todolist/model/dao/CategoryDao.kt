@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.Flow
 ////分类数据访问对象，对数据库的各项操作进行封装
 @Dao
 interface CategoryDao {
+    // 将指定待办标记为已提醒
+    @Query("UPDATE todo_affair SET hasReminded = 1 WHERE affId = :todoId")
+    suspend fun markTodoReminded(todoId: Long)
 
 
 //    挂起查询，用于判空，一次性查询，用于按钮查询逻辑

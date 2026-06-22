@@ -33,5 +33,5 @@ data class TodoAffair(
     val isFinish: Int = 0,//是否完成
     val categoryId: Long?,
     val priorityId: Long?,
-//    val hashReminded:Int
+    val hasReminded:Int=0
 )

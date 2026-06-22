@@ -25,13 +25,11 @@ fun TodoExpireTopToast(
     onDismiss: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    // 进入弹窗自动倒计时3秒后关闭
     LaunchedEffect(Unit) {
-        delay(3000)
+        delay(5000)
         onDismiss()
     }
 
-//    顶部定位
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -43,36 +41,39 @@ fun TodoExpireTopToast(
                 .fillMaxWidth(0.4f)
                 .wrapContentHeight(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F2F2))
+            // 新配色：暖橙浅底色 + 深色文字，视觉突出不刺眼
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFFFF3E0) // 浅橙米色底色
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp) // 增加阴影，分层更明显
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(5.dp),
-                verticalAlignment = Alignment.Top
+                    .padding(12.dp), // 加大内边距，更饱满
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // 左侧小苹果图标
                 Image(
                     painter = painterResource(id = R.drawable.logo2),
                     contentDescription = "提醒图标",
                     modifier = Modifier
-                        .size(24.dp)
-                        .padding(end = 5.dp)
+                        .size(26.dp)
+                        .padding(end = 8.dp),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFFF57C00)) // 图标橙色调统一
                 )
-                // 中间文字区域
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "待办截止提醒",
                         fontSize = 14.sp,
-                        color = Color.Black,
+                        color = Color(0xFFE65100), // 深橙标题，强化提醒
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = "${expireTodo.title}:${expireTodo.detail}",
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = Color(0xFF424242),
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
