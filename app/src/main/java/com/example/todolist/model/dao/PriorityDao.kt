@@ -1,9 +1,9 @@
-package com.example.todolist.dao
+package com.example.todolist.model.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.example.todolist.entity.Priority
+import com.example.todolist.model.entity.Priority
 import kotlinx.coroutines.flow.Flow
 
 //优先级数据访问对象，对数据库的各项操作进行封装

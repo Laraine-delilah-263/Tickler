@@ -1,4 +1,4 @@
-package com.example.todolist.entity
+package com.example.todolist.model.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -29,8 +29,9 @@ data class TodoAffair(
     val detail: String,
     val startTime: Long,
     val endTime: Long,
-    val isExpired: Int = 0,
-    val isFinish: Int = 0,
+    val isExpired: Int = 0,//是否过期
+    val isFinish: Int = 0,//是否完成
     val categoryId: Long?,
-    val priorityId: Long?
+    val priorityId: Long?,
+//    val hashReminded:Int
 )

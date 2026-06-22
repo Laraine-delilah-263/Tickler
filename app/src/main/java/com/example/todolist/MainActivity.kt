@@ -25,15 +25,17 @@ import com.example.todolist.ui.component.NoteListArea
 import com.example.todolist.ui.component.TopNavigationBar
 import com.example.todolist.ui.theme.TodoListTheme
 //数据库依赖
-import com.example.todolist.dao.TodoJoinData
-import com.example.todolist.database.AppDatabase
-import com.example.todolist.entity.Category
-import com.example.todolist.entity.Priority
-import com.example.todolist.entity.TodoAffair
+import com.example.todolist.model.dao.TodoJoinData
+import com.example.todolist.model.database.AppDatabase
+import com.example.todolist.model.entity.Category
+import com.example.todolist.model.entity.Priority
+import com.example.todolist.model.entity.TodoAffair
 import com.example.todolist.ui.component.AddTodoDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.todolist.ui.component.TodoExpireTopToast
+import com.example.todolist.ui.component.AddCategoryDialog
 
 class MainActivity : ComponentActivity() {
 
@@ -77,6 +79,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TodoListTheme {
+//                新增标签弹窗
+                var openAddCateDialog by remember { mutableStateOf(false) }
+//                弹窗状态
+                var showExpireDialog by remember { mutableStateOf(false) }
+                var currentExpireTodo by remember { mutableStateOf<TodoJoinData?>(null) }
+                var remindedTodoIds = remember { mutableStateListOf<Long>() }
                 var isSearchFocused by remember { mutableStateOf(false) }
 //                全局共享焦点
                 val searchFocusRequester = remember { FocusRequester() }
@@ -98,26 +106,29 @@ class MainActivity : ComponentActivity() {
                 var selectCategory by remember { mutableStateOf("全部分类") }
                 var selectPriority by remember { mutableStateOf("全部等级") }
 //                根据搜索文本过滤待办列表
-                val filterTodoList=remember(searchText,todoDataSource,selectCategory,selectPriority) {
-                    var list=todoDataSource
+                val filterTodoList =
+                    remember(searchText, todoDataSource, selectCategory, selectPriority) {
+                        var list = todoDataSource
 //                    1.搜索文本过滤
-                    if (searchText.isBlank()){
-                        list
-                    }else{
-                        val keyword=searchText.trim().lowercase()
-                        list.filter { todo->
-                            todo.title.lowercase().contains(keyword)||todo.detail.lowercase().contains(keyword)                        }
-                    }
+                        if (searchText.isBlank()) {
+                            list
+                        } else {
+                            val keyword = searchText.trim().lowercase()
+                            list.filter { todo ->
+                                todo.title.lowercase().contains(keyword) || todo.detail.lowercase()
+                                    .contains(keyword)
+                            }
+                        }
 //                    2.分类过滤
-                    if (selectCategory != "全部分类") {
-                        list = list.filter { it.label == selectCategory }
+                        if (selectCategory != "全部分类") {
+                            list = list.filter { it.label == selectCategory }
+                        }
+                        // 3. 优先级过滤
+                        if (selectPriority != "全部等级") {
+                            list = list.filter { it.levelName == selectPriority }
+                        }
+                        list
                     }
-                    // 3. 优先级过滤
-                    if (selectPriority != "全部等级") {
-                        list = list.filter { it.levelName == selectPriority }
-                    }
-                    list
-                }
                 // 监听数据库变化，自动刷新事务列表
                 LaunchedEffect(Unit) {
                     todoDao.queryTodoJoinAll().collect { list ->
@@ -132,7 +143,32 @@ class MainActivity : ComponentActivity() {
                 }
 //                优先级
                 LaunchedEffect(Unit) {
-                    priorityDao.getAllPriority().collect{ prioList->allPriority = prioList
+                    priorityDao.getAllPriority().collect { prioList ->
+                        allPriority = prioList
+                    }
+                }
+
+                // 实时检测过期未完成待办
+                LaunchedEffect(todoDataSource) {
+                    while(true){
+                        val nowTime = System.currentTimeMillis()
+                        if(showExpireDialog){
+                            delay(1000)
+                            continue
+                        }
+                        val expireTodo = todoDataSource.firstOrNull { todo ->
+                            // 条件：截止时间 < 当前时间 + 未完成 + 未提醒过
+                            todo.endTime < nowTime
+                                    && todo.isExpired == 0
+                                    && todo.isFinish==0
+                                    && !remindedTodoIds.contains(todo.affId)
+                        }
+                        if (expireTodo != null) {
+                            currentExpireTodo = expireTodo
+                            showExpireDialog = true
+                            remindedTodoIds.add(expireTodo.affId)
+                        }
+                        delay(1000)
                     }
                 }
 
@@ -168,52 +204,56 @@ class MainActivity : ComponentActivity() {
 //                            消除点击波纹
                             indication = null,
                             interactionSource = null
-                        ){
+                        ) {
                             keyboardController?.hide()
                             scope.launch {
                                 delay(80)
                                 searchFocusRequester.freeFocus()
                             }
-                        }
-                    ,
+                        },
                     color = pageBg
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         TopNavigationBar(
                             searchText = searchText,
                             onSearchChange = { searchText = it },
-                            textColor = textPrimary ,
+                            textColor = textPrimary,
                             searchFocusRequester = searchFocusRequester,
                             globalKeyboardController = keyboardController,
                             globalScope = scope,
-                            onFocusChange = {newState->
-                                isSearchFocused=newState
+                            onFocusChange = { newState ->
+                                isSearchFocused = newState
                             },
-                            isSearchFocused=isSearchFocused,
+                            isSearchFocused = isSearchFocused,
                         )
-                        Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                        Row(modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)) {
                             LeftSideBar(
                                 modifier = Modifier.width(220.dp),
                                 bgColor = sideBarBg,
                                 textColor = textPrimary,
                                 mainColor = mainColor,
-                                dividerColor = dividerColor
+                                dividerColor = dividerColor,
+                                onAddTagClick = { openAddCateDialog = true }
                             )
-                            Column {
+                                    Column {
                                 FilterBar(
                                     textColor = textPrimary,
                                     mainColor = mainColor,
                                     dividerColor = dividerColor,
                                     categoryList = allCategory,
                                     priorityList = allPriority,
-                                    onCategorySelect={selectCategory=it},
-                                    onPrioritySelect={selectPriority=it},
+                                    onCategorySelect = { selectCategory = it },
+                                    onPrioritySelect = { selectPriority = it },
 //                                    监听高亮
                                     currentSelectCategory = selectCategory,
                                     currentSelectPriority = selectPriority
                                 )
                                 Box(
-                                    modifier = Modifier.weight(1f).fillMaxHeight()
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
                                 ) {
 //                                    传入数据库真实数据
                                     NoteListArea(
@@ -221,15 +261,15 @@ class MainActivity : ComponentActivity() {
                                         textColor = textPrimary,
                                         mainColor = mainColor,
 //                                        todoList=todoDataSource,
-                                        todoList=filterTodoList,
+                                        todoList = filterTodoList,
                                         selectStroke = selectStrokeColor,
-                                        onDeleteTodo = {targetTodoId->
+                                        onDeleteTodo = { targetTodoId ->
                                             scope.launch(Dispatchers.IO) {
-                                                val todo=todoDao.getTodoById(targetTodoId)
+                                                val todo = todoDao.getTodoById(targetTodoId)
                                                 todo?.let { todoDao.deleteTodoById(targetTodoId) }
                                             }
                                         },
-                                        onMarkComplete={targetTodoId->
+                                        onMarkComplete = { targetTodoId ->
                                             scope.launch(Dispatchers.IO) {
                                                 todoDao.markTodoFinish(targetTodoId)
                                             }
@@ -244,7 +284,9 @@ class MainActivity : ComponentActivity() {
                                         onClick = {
                                             openAddDialog = true
                                         },
-                                        modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp),
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(24.dp),
                                         shape = CircleShape,
                                         containerColor = mainColor
                                     ) {
@@ -269,7 +311,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                //挂载弹窗
+                //挂载新增事务弹窗
                 AddTodoDialog(
                     show = openAddDialog,
                     textColor = textPrimary,
@@ -277,7 +319,7 @@ class MainActivity : ComponentActivity() {
                     priorityList = allPriority,
                     bgCardColor = contentCardBg, //跟随页面卡片底色
                     closeDialog = { openAddDialog = false },
-                    saveClick = { titleInput,content,cateId,prioId, fullEndTimeMs ->
+                    saveClick = { titleInput, content, cateId, prioId, fullEndTimeMs ->
                         //IO线程插入数据库
                         scope.launch(Dispatchers.IO) {
                             val now = System.currentTimeMillis()
@@ -291,6 +333,30 @@ class MainActivity : ComponentActivity() {
                                 priorityId = prioId
                             )
                             todoDao.insertTodo(todo)
+                        }
+                    }
+                )
+                //挂载截止时间提醒弹窗
+                // 过期提醒顶部弹窗
+                if (showExpireDialog && currentExpireTodo != null) {
+                    TodoExpireTopToast(
+                        expireTodo = currentExpireTodo!!,
+                        onDismiss = {
+                            showExpireDialog = false
+                            currentExpireTodo = null
+                        }
+                    )
+                }
+                // 新增自定义分类弹窗
+                AddCategoryDialog(
+                    show = openAddCateDialog,
+                    textColor = textPrimary,
+                    bgCardColor = contentCardBg,
+                    closeDialog = { openAddCateDialog = false },
+                    saveNewCategory = { labelName ->
+                        scope.launch(Dispatchers.IO) {
+                            // 插入新分类到数据库
+                            categoryDao.insertCategory(Category(label = labelName))
                         }
                     }
                 )

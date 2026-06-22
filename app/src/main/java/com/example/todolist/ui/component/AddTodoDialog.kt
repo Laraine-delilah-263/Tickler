@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
@@ -17,10 +16,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerLayoutType
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,12 +28,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
-import androidx.compose.ui.unit.min
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.todolist.entity.Category
-import com.example.todolist.entity.Priority
+import com.example.todolist.model.entity.Category
+import com.example.todolist.model.entity.Priority
 import java.time.Instant
 import java.time.ZoneId
 
@@ -70,7 +67,10 @@ fun AddTodoDialog(
     val datePickerState = rememberDatePickerState(
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis >= System.currentTimeMillis()
+                val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
+                val targetDate = Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+                // 目标日期 >= 今天 即可选择
+                return !targetDate.isBefore(now)
             }
         }
     )
@@ -81,6 +81,21 @@ fun AddTodoDialog(
         initialMinute = 0,
         is24Hour = true
         )
+
+    // 获取今天23:59的时间戳作为默认截止日期
+    val defaultEndOfDay = remember {
+        val nowLocalDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
+        val endOfDay = nowLocalDate.atTime(23, 59)
+        endOfDay.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    }
+
+//选择日期后自动切换分页
+    LaunchedEffect(datePickerState.selectedDateMillis) {
+        if (datePickerState.selectedDateMillis != null) {
+            showDatePage = false
+        }
+    }
+
 
     Dialog(onDismissRequest = closeDialog,
         properties = DialogProperties(
@@ -196,7 +211,8 @@ fun AddTodoDialog(
                     Button(
                         onClick = {
                             val zone = ZoneId.systemDefault()
-                            val selectedLocalDate = Instant.ofEpochMilli(datePickerState.selectedDateMillis ?: 0L)
+                            val selectedDateMs = datePickerState.selectedDateMillis ?: defaultEndOfDay
+                            val selectedLocalDate = Instant.ofEpochMilli(selectedDateMs)
                                 .atZone(zone)
                                 .toLocalDate()
                             val fullDateTime = selectedLocalDate
@@ -219,6 +235,7 @@ fun AddTodoDialog(
                     }
                 }
             }
+
 
             // 中间分割线
             Divider(

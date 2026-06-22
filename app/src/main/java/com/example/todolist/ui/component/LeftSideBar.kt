@@ -20,7 +20,8 @@ fun LeftSideBar(
     bgColor: Color,
     textColor: Color,
     mainColor: Color,
-    dividerColor: Color
+    dividerColor: Color,
+    onAddTagClick:()-> Unit
 ) {
     Column(
         modifier = modifier
@@ -45,7 +46,11 @@ fun LeftSideBar(
                         shape = RoundedCornerShape(8.dp)
                     )
                     .padding(vertical = 12.dp, horizontal = 16.dp)
-                    .clickable { }
+                    .clickable {
+                        if(func=="自定义标签"){
+                            onAddTagClick()
+                        }
+                    }
             ) {
                 Text(text = func, color = textColor)
             }

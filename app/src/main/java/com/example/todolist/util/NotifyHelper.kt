@@ -7,7 +7,7 @@ import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.todolist.R
-import com.example.todolist.entity.TodoAffair
+import com.example.todolist.model.entity.TodoAffair
 
 class NotifyHelper(private val context: Context) {
     // 渠道ID（全局统一，教材要求Builder与渠道ID一致）

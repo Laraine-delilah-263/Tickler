@@ -1,16 +1,19 @@
-package com.example.todolist.dao
+package com.example.todolist.model.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
-import com.example.todolist.entity.TodoAffair
+import com.example.todolist.model.entity.TodoAffair
 import kotlinx.coroutines.flow.Flow
 
 
 //事务数据访问对象，对数据库的各项操作进行封装
 @Dao
 interface TodoAffairDao {
+    // 将待办标记为已弹出过期提醒
+//    @Query("UPDATE todo_affair SET hashReminded = 1 WHERE affId = :id")
+//    suspend fun markTodoReminded(id: Long)
 
     @Query("UPDATE todo_affair SET isFinish = 1 WHERE affId = :id")
     suspend fun markTodoFinish(id: Long)

@@ -1,18 +1,16 @@
-package com.example.todolist.database
+package com.example.todolist.model.database
 
-import android.annotation.SuppressLint
 import android.content.Context
-import androidx.lifecycle.ViewModelProvider.NewInstanceFactory.Companion.instance
 
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.todolist.dao.CategoryDao
-import com.example.todolist.dao.PriorityDao
-import com.example.todolist.dao.TodoAffairDao
-import com.example.todolist.entity.Category
-import com.example.todolist.entity.Priority
-import com.example.todolist.entity.TodoAffair
+import com.example.todolist.model.dao.CategoryDao
+import com.example.todolist.model.dao.PriorityDao
+import com.example.todolist.model.dao.TodoAffairDao
+import com.example.todolist.model.entity.Category
+import com.example.todolist.model.entity.Priority
+import com.example.todolist.model.entity.TodoAffair
 
 //用于定义数据库中的关键信息，包括数据库版本号，包含实体类和提供Dao层的访问实例
 @Database(

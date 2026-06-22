@@ -7,7 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.runBlocking
-import com.example.todolist.database.AppDatabase
+import com.example.todolist.model.database.AppDatabase
 import com.example.todolist.util.NotifyHelper
 
 class TodoAlarmReceiver : BroadcastReceiver() {

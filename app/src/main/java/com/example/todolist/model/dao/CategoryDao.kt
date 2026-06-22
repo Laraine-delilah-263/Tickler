@@ -1,17 +1,19 @@
-package com.example.todolist.dao
+package com.example.todolist.model.dao
 
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
-import com.example.todolist.entity.Category
+import com.example.todolist.model.entity.Category
 import kotlinx.coroutines.flow.Flow
 
 
 ////分类数据访问对象，对数据库的各项操作进行封装
 @Dao
 interface CategoryDao {
+
+
 //    挂起查询，用于判空，一次性查询，用于按钮查询逻辑
     @Query("SELECT * FROM category")
     suspend fun getCategoryList(): List<Category>
@@ -29,6 +31,6 @@ interface CategoryDao {
 
 //    更新数据
     @Update
-    fun updataCategory(newCategory: Category)
+    suspend fun updataCategory(newCategory: Category)
 
 }

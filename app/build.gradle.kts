@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.runtime)
     implementation(libs.androidx.ui)
     implementation(libs.compose.material3)
     implementation(libs.material)
@@ -124,8 +125,6 @@ dependencies {
     dependencies {
         implementation("sh.calvin.reorderable:reorderable:3.0.0")
     }
-
-    implementation("androidx.compose.foundation:foundation-reorder:1.7.0")
 
     implementation("sh.calvin.reorderable:reorderable:3.0.0")
 
