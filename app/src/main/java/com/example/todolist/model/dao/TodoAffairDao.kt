@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.example.todolist.model.entity.TodoAffair
 import kotlinx.coroutines.flow.Flow
 
@@ -11,6 +12,10 @@ import kotlinx.coroutines.flow.Flow
 //事务数据访问对象，对数据库的各项操作进行封装
 @Dao
 interface TodoAffairDao {
+    @Query("SELECT MAX(sortOrder) FROM todo_affair")
+    suspend fun getMaxSortOrder(): Int?
+    @Update
+    suspend fun batchUpdateTodo(todoList: List<TodoAffair>)
     // 批量删除：根据affId集合删除多条待办
     @Query("DELETE FROM todo_affair WHERE affId IN (:idList)")
     suspend fun batchDeleteTodo(idList: List<Long>)
@@ -50,7 +55,7 @@ interface TodoAffairDao {
         FROM todo_affair t
         LEFT JOIN priority p ON t.priorityId = p.prioId
         LEFT JOIN category c ON t.categoryId = c.cataId
-        ORDER BY t.endTime ASC
+        ORDER BY sortOrder  ASC
     """
     )
     fun queryTodoJoinAll(): Flow<List<TodoJoinData>>

@@ -11,6 +11,7 @@ import androidx.compose.material3.SwitchDefaults
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -34,11 +35,12 @@ fun BottomStatusBar(
             .fillMaxWidth()
             .background(bgColor)
             .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-//        Text(text = "统计文字", color = textColor)
-        Spacer(modifier = Modifier.weight(1f))
         if(batchMode){
+            Spacer(modifier = Modifier.weight(1f))
+
             Button(
                 onClick = onBatchDelete,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
@@ -46,20 +48,20 @@ fun BottomStatusBar(
                 Text("批量删除($selectedCount)")
             }
         }else{
-            Text(
-                text = "当前模式：${if (isDarkMode) "夜间模式" else "日间模式"}",
-                color = textColor,
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            Switch(
-                checked = isDarkMode,
-                onCheckedChange = onModeChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = mainColor,
-                    checkedTrackColor = mainColor.copy(alpha = 0.5f)
+                Text(
+                    text = "当前模式：${if (isDarkMode) "夜间模式" else "日间模式"}",
+                    color = textColor,
+                    style = MaterialTheme.typography.bodySmall
                 )
-            )
+
+                Switch(
+                    checked = isDarkMode,
+                    onCheckedChange = onModeChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = mainColor,
+                        checkedTrackColor = mainColor.copy(alpha = 0.5f)
+                    )
+                )
         }
 
     }

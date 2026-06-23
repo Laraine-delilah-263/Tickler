@@ -122,10 +122,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
-    dependencies {
-        implementation("sh.calvin.reorderable:reorderable:3.0.0")
-    }
 
+//    拖拽依赖
     implementation("sh.calvin.reorderable:reorderable:3.0.0")
-
 }

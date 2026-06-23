@@ -43,9 +43,9 @@ fun AddTodoDialog(
     textColor: Color,
     bgCardColor: Color,
     categoryList: List<Category>,
-    priorityList:List<Priority>,
+    priorityList: List<Priority>,
     closeDialog: () -> Unit,
-    saveClick: (title: String, content: String, cateId: Long?,prioId:Long?, dateTimeMilli: Long) -> Unit
+    saveClick: (title: String, content: String, cateId: Long?, prioId: Long?, dateTimeMilli: Long) -> Unit
 ) {
     if (!show) return
     // 左侧输入数据
@@ -54,7 +54,7 @@ fun AddTodoDialog(
 
     // 分类下拉
     var cateExpanded by remember { mutableStateOf(false) }
-    var selectedCate: Category? by remember { mutableStateOf(if(categoryList.isNotEmpty()) categoryList.first() else null) }
+    var selectedCate: Category? by remember { mutableStateOf(if (categoryList.isNotEmpty()) categoryList.first() else null) }
 
 //    优先级下拉
     var prioExpanded by remember { mutableStateOf(false) }
@@ -68,7 +68,8 @@ fun AddTodoDialog(
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
-                val targetDate = Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+                val targetDate =
+                    Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneId.systemDefault()).toLocalDate()
                 // 目标日期 >= 今天 即可选择
                 return !targetDate.isBefore(now)
             }
@@ -80,7 +81,7 @@ fun AddTodoDialog(
         initialHour = 8,
         initialMinute = 0,
         is24Hour = true
-        )
+    )
 
     // 获取今天23:59的时间戳作为默认截止日期
     val defaultEndOfDay = remember {
@@ -97,10 +98,11 @@ fun AddTodoDialog(
     }
 
 
-    Dialog(onDismissRequest = closeDialog,
+    Dialog(
+        onDismissRequest = closeDialog,
         properties = DialogProperties(
-        usePlatformDefaultWidth = false
-    )
+            usePlatformDefaultWidth = false
+        )
     ) {
         Row(
             modifier = Modifier
@@ -137,7 +139,7 @@ fun AddTodoDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .heightIn(min=100.dp),
+                        .heightIn(min = 100.dp),
                     maxLines = 3
                 )
                 ExposedDropdownMenuBox(
@@ -150,7 +152,7 @@ fun AddTodoDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("事务分类", color = textColor) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cateExpanded)},
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cateExpanded) },
                         modifier = Modifier.menuAnchor()// 将此输入框作为下拉菜单的基准锚点
                     )
                     ExposedDropdownMenu(
@@ -211,7 +213,8 @@ fun AddTodoDialog(
                     Button(
                         onClick = {
                             val zone = ZoneId.systemDefault()
-                            val selectedDateMs = datePickerState.selectedDateMillis ?: defaultEndOfDay
+                            val selectedDateMs =
+                                datePickerState.selectedDateMillis ?: defaultEndOfDay
                             val selectedLocalDate = Instant.ofEpochMilli(selectedDateMs)
                                 .atZone(zone)
                                 .toLocalDate()
@@ -220,7 +223,13 @@ fun AddTodoDialog(
                                 .atZone(zone)
                                 .toInstant()
                                 .toEpochMilli()
-                            saveClick(titleText, contentText, selectedCate?.cataId,selectedPriority?.prioId, fullDateTime)
+                            saveClick(
+                                titleText,
+                                contentText,
+                                selectedCate?.cataId,
+                                selectedPriority?.prioId,
+                                fullDateTime
+                            )
                             closeDialog()
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -263,7 +272,7 @@ fun AddTodoDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .fillMaxHeight()
-                        .widthIn(max=400.dp)
+                        .widthIn(max = 400.dp)
                 ) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp)

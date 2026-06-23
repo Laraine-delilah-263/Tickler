@@ -97,9 +97,6 @@ class MainActivity : ComponentActivity() {
 //                全局共享焦点
                 val searchFocusRequester = remember { FocusRequester() }
                 val keyboardController = LocalSoftwareKeyboardController.current
-//                输入搜索的临时文本
-                var searchkeyword by remember { mutableStateOf("") }
-                var queryResult by remember { mutableStateOf("") }
                 var isDarkMode by remember { mutableStateOf(false) }
                 var searchText by remember { mutableStateOf("") }
 //                待办数据列表
@@ -214,6 +211,7 @@ class MainActivity : ComponentActivity() {
                             scope.launch {
                                 delay(80)
                                 searchFocusRequester.freeFocus()
+                                onWindowFocusChanged(false)
                             }
                         },
                     color = pageBg
@@ -285,7 +283,14 @@ class MainActivity : ComponentActivity() {
                                         },
                                         // 拖拽排序回调：新顺序列表
                                         onOrderChanged = { newSortList ->
-                                            // 可选：持久化排序，给 TodoAffair 增加 sortOrder 字段循环更新入库
+                                            scope.launch(Dispatchers.IO) {
+                                                // 按拖拽后的顺序重新赋值sortOrder
+                                                val updateData = newSortList.mapIndexed { index, joinData ->
+                                                    val originTodo = todoDao.getTodoById(joinData.affId)
+                                                    originTodo?.copy(sortOrder = index)
+                                                }.filterNotNull()
+                                                todoDao.batchUpdateTodo(updateData)
+                                            }
                                         },
                                         batchMode = batchManageMode,
                                         selectedIds = selectedTodoIds,
@@ -360,6 +365,7 @@ class MainActivity : ComponentActivity() {
                         scope.launch(Dispatchers.IO) {
                             val now = System.currentTimeMillis()
                             //标题固定，内容填输入文字，截止时间=当天+选定时分，分类/优先级暂时null
+                            val maxSort=todoDao.getMaxSortOrder()?:0
                             val todo = TodoAffair(
                                 title = titleInput,
                                 detail = content,
@@ -367,7 +373,8 @@ class MainActivity : ComponentActivity() {
                                 endTime = fullEndTimeMs,
                                 categoryId = cateId,
                                 priorityId = prioId,
-                                hasReminded = 0
+                                hasReminded = 0,
+                                sortOrder = maxSort+1
                             )
                             todoDao.insertTodo(todo)
                         }

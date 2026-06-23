@@ -22,8 +22,9 @@ import com.example.todolist.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.ui.platform.LocalFocusManager
 
 
 //头部列表
@@ -38,7 +39,8 @@ fun TopNavigationBar(
     onFocusChange: (Boolean) -> Unit,
     isSearchFocused: Boolean
 ) {
-
+    val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -99,11 +101,10 @@ fun TopNavigationBar(
                                 .size(20.dp)
                                 .clickable{
                                     onSearchChange("")
-                                    globalKeyboardController?.hide()
-                                    globalScope.launch {
-                                        delay(80)
-                                        searchFocusRequester.freeFocus()
-                                    }
+                                    // 1. 立即隐藏键盘并清除焦点
+                                    focusManager.clearFocus()
+                                    // 2. 同步更新外部UI状态
+                                    onFocusChange(false)
                                 },
                             colorFilter = ColorFilter.tint(textColor.copy(0.6f))
                         )
@@ -128,21 +129,18 @@ fun TopNavigationBar(
                 )
             }
         }
-
 //        搜索按钮
         Button(
             onClick = {
-                globalKeyboardController?.hide()
-                globalScope.launch {
-                    delay(80)//等待键盘收起动画完成
-                    searchFocusRequester.freeFocus()//释放输入框焦点
-                }
+                // 1. 立即隐藏键盘并清除焦点
+                focusManager.clearFocus()
+                // 2. 同步更新外部UI状态
+                onFocusChange(false)
             },
             modifier = Modifier
                 .width(120.dp)
                 .height(50.dp),
             shape = RoundedCornerShape(10.dp),
-//            border = BorderStroke(1.dp, Color.Black)
         ) {
             Text(text="搜索", fontSize = 20.sp)
         }
