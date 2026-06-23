@@ -36,6 +36,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.example.todolist.ui.component.TodoExpireTopToast
 import com.example.todolist.ui.component.AddCategoryDialog
+import com.example.todolist.ui.component.TodoDetailDialog
 
 class MainActivity : ComponentActivity() {
 
@@ -83,6 +84,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TodoListTheme {
+                // 详情弹窗
+                var showDetailDialog by remember { mutableStateOf(false) }
+                var targetDetailTodo by remember { mutableStateOf<TodoJoinData?>(null) }
 //              批量管理模式开关
                 var batchManageMode by remember { mutableStateOf(false) }
 //              存储选中的待办affId
@@ -300,6 +304,10 @@ class MainActivity : ComponentActivity() {
                                             } else {
                                                 selectedTodoIds.add(todoId)
                                             }
+                                        },
+                                        onClickTodoItem = { todo ->
+                                            targetDetailTodo = todo
+                                            showDetailDialog = true
                                         }
                                     )
 //                                    新建笔记按钮
@@ -350,6 +358,18 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+                }
+                // 事务详情弹窗
+                if (showDetailDialog && targetDetailTodo != null) {
+                    TodoDetailDialog(
+                        todo = targetDetailTodo!!,
+                        textColor = textPrimary,
+                        cardBg = contentCardBg,
+                        onClose = {
+                            showDetailDialog = false
+                            targetDetailTodo = null
+                        }
+                    )
                 }
 
                 //挂载新增事务弹窗

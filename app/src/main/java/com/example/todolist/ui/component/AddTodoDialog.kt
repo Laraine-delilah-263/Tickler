@@ -45,7 +45,7 @@ fun AddTodoDialog(
     categoryList: List<Category>,
     priorityList: List<Priority>,
     closeDialog: () -> Unit,
-    saveClick: (title: String, content: String, cateId: Long?, prioId: Long?, dateTimeMilli: Long) -> Unit
+    saveClick: (title: String, content: String, cateId: Long?, prioId: Long?, dateTimeMilli: Long) -> Unit,
 ) {
     if (!show) return
     // 左侧输入数据
