@@ -259,7 +259,8 @@ class MainActivity : ComponentActivity() {
                                     onPrioritySelect = { selectPriority = it },
 //                                    监听高亮
                                     currentSelectCategory = selectCategory,
-                                    currentSelectPriority = selectPriority
+                                    currentSelectPriority = selectPriority,
+
                                 )
                                 Box(
                                     modifier = Modifier
@@ -361,10 +362,40 @@ class MainActivity : ComponentActivity() {
                 }
                 // 事务详情弹窗
                 if (showDetailDialog && targetDetailTodo != null) {
+                    val currentTodo = targetDetailTodo
                     TodoDetailDialog(
-                        todo = targetDetailTodo!!,
+                        todo = currentTodo!!,
                         textColor = textPrimary,
-                        cardBg = contentCardBg,
+                        bgCardColor = contentCardBg,
+                        categoryList = allCategory,
+                        priorityList = allPriority,
+                        onUpdateTodo = { title, content, cateId, prioId, endTime ->
+                            scope.launch(Dispatchers.IO) {
+                                val originTodo = todoDao.getTodoById(currentTodo.affId) ?: return@launch
+                                val nowTime = System.currentTimeMillis()
+                                val newIsExpiredInt = if (endTime < nowTime) 1 else 0
+
+                                val safeCateId = cateId ?: originTodo.categoryId
+                                val safePrioId = prioId ?: originTodo.priorityId
+
+                                val updatedEntity = originTodo.copy(
+                                    title = title,
+                                    detail = content,
+                                    categoryId = safeCateId,
+                                    priorityId = safePrioId,
+                                    endTime = endTime,
+                                    isExpired = newIsExpiredInt,
+                                    isFinish = 0,         // 强制置为未完成，取消文字划线
+                                    hasReminded = 0       // 重置提醒，到期再次弹窗
+                                )
+                                todoDao.updateTodo(updatedEntity)
+
+                                scope.launch(Dispatchers.Main) {
+                                    showDetailDialog = false
+                                    targetDetailTodo = null
+                                }
+                            }
+                        },
                         onClose = {
                             showDetailDialog = false
                             targetDetailTodo = null

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 //事务数据访问对象，对数据库的各项操作进行封装
 @Dao
 interface TodoAffairDao {
+
     @Update
     suspend fun updateTodo(todo: TodoAffair)
     @Query("SELECT MAX(sortOrder) FROM todo_affair")

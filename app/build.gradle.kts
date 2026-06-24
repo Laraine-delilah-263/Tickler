@@ -123,4 +123,7 @@ dependencies {
 
 //    拖拽依赖
     implementation("sh.calvin.reorderable:reorderable:3.0.0")
+
+    implementation("androidx.compose.foundation:foundation:1.6.0")
+
 }
