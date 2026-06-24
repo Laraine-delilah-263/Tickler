@@ -317,7 +317,7 @@ class MainActivity : ComponentActivity() {
                                         },
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
-                                            .padding(24.dp),
+                                            .padding(end=70.dp,bottom=24.dp),
                                         shape = CircleShape,
                                         containerColor = mainColor
                                     ) {

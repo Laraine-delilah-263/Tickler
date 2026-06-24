@@ -56,7 +56,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.todolist.R
 import com.example.todolist.model.dao.TodoJoinData
@@ -64,7 +63,6 @@ import com.example.todolist.util.getPriorityColor
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 // 滑动枚举别名简化
 private val StartToEnd = SwipeToDismissBoxValue.StartToEnd
@@ -99,54 +97,45 @@ fun NoteListArea(
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
     }
     val density = LocalDensity.current
-    // 自动滚动阈值与步长
     val autoScrollEdgePx = remember { with(density) { 40.dp.toPx() } }
     val autoScrollStepPx = remember { with(density) { 1.5.dp.toPx() } }
 
-    // ========== 拖拽核心状态（参考股票拖拽实现） ==========
+    // 拖拽状态
     var draggingAffId by remember { mutableStateOf<Long?>(null) }
     var dragStartIndex by remember { mutableIntStateOf(-1) }
     var dragInsertionIndex by remember { mutableIntStateOf(-1) }
     var dragStartFingerY by remember { mutableFloatStateOf(0f) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     var dragScrollOffset by remember { mutableFloatStateOf(0f) }
-    // 存储所有行实时窗口坐标
+
     val rowBounds = remember { mutableMapOf<Long, TodoRowBounds>() }
-    // 拖动时冻结坐标快照，防止视觉位移抖动
     var dragRowBounds by remember { mutableStateOf<Map<Long, TodoRowBounds>>(emptyMap()) }
-    // LazyColumn 视口坐标（用于边缘自动滚动）
+    var dragSnapshotList by remember { mutableStateOf<List<TodoJoinData>>(emptyList()) }
+
     var listViewportTop by remember { mutableFloatStateOf(0f) }
     var listViewportBottom by remember { mutableFloatStateOf(0f) }
     val lazyListState = rememberLazyListState()
 
-    // 稳定回调，防止拖拽内部拿到旧列表/回调
     val stableTodoList = rememberUpdatedState(todoList)
     val stableOnOrderChanged = rememberUpdatedState(onOrderChanged)
 
-    // ========== 自动滚动循环：拖动时检测上下边缘自动滚动 ==========
+    // 边缘自动滚动
     LaunchedEffect(draggingAffId) {
         while (draggingAffId != null) {
             val fingerY = dragStartFingerY + dragOffset - dragScrollOffset
             var scrollDelta = 0f
-            // 靠近顶部向上滚
-            if (fingerY < listViewportTop + autoScrollEdgePx) {
-                scrollDelta = -autoScrollStepPx
-            }
-            // 靠近底部向下滚
-            if (fingerY > listViewportBottom - autoScrollEdgePx) {
-                scrollDelta = autoScrollStepPx
-            }
+            if (fingerY < listViewportTop + autoScrollEdgePx) scrollDelta = -autoScrollStepPx
+            if (fingerY > listViewportBottom - autoScrollEdgePx) scrollDelta = autoScrollStepPx
+
             if (scrollDelta != 0f) {
                 val consumed = lazyListState.scrollBy(scrollDelta)
-                if (consumed != 0f) {
-                    dragScrollOffset += consumed // 只修正滚动偏移，不再重复叠加dragOffset
-                }
+                if (consumed != 0f) dragScrollOffset += consumed
             }
             withFrameNanos { }
         }
     }
 
-    // ========== 拖拽开始逻辑 ==========
+    // 拖拽开始：快照完整列表+坐标，彻底隔离实时列表干扰
     fun onDragStart(fingerY: Float, startIdx: Int, affId: Long) {
         draggingAffId = affId
         dragStartIndex = startIdx
@@ -154,62 +143,59 @@ fun NoteListArea(
         dragStartFingerY = fingerY
         dragOffset = 0f
         dragScrollOffset = 0f
-        // 冻结当前所有行坐标快照
+        dragSnapshotList = stableTodoList.value.toList()
         dragRowBounds = rowBounds.toMap()
     }
 
+    // 拖拽移动：基于快照列表遍历，支持远距离跨条目交换
     fun onDragMove(deltaY: Float) {
         dragOffset += deltaY
-        // 屏幕可视手指Y坐标
         val fingerScreenY = dragStartFingerY + dragOffset - dragScrollOffset
-        val boundsMap = dragRowBounds.ifEmpty { rowBounds }
-        val entries = stableTodoList.value
+        val boundsMap = dragRowBounds
+        val snapshotItems = dragSnapshotList
         val sortedBounds = boundsMap.values.sortedBy { it.index }
-        var targetInsert = entries.size // 默认插在最后
+        var targetInsert = snapshotItems.size
 
+        // 遍历快照所有行，匹配视觉位置
         for (bounds in sortedBounds) {
-            // 关键：冻结快照坐标需要减去滚动偏移，对齐当前屏幕视觉位置
             val visualTop = bounds.top - dragScrollOffset
             val visualBottom = bounds.bottom - dragScrollOffset
             val visualCenter = (visualTop + visualBottom) / 2f
 
             when {
-                // 手指在当前行中线之上 → 插入到当前行前面
                 fingerScreenY < visualCenter -> {
                     targetInsert = bounds.index
                     break
                 }
-                // 手指在当前行中线之下 → 插入到下一行前面
                 fingerScreenY < visualBottom -> {
                     targetInsert = bounds.index + 1
                     break
                 }
-                // 手指在本行下方，继续循环判断下一行
                 else -> targetInsert = bounds.index + 1
             }
         }
-
-        // 限制范围 0 ~ 列表长度
-        dragInsertionIndex = targetInsert.coerceIn(0, entries.size)
+        dragInsertionIndex = targetInsert.coerceIn(0, snapshotItems.size)
     }
 
-    // ========== 拖拽结束：提交真实顺序 ==========
+    // 拖拽结束：任意两个位置交换逻辑修复
     fun onDragEnd() {
         val fromIdx = dragStartIndex
         val insertIdx = dragInsertionIndex
-        val list = stableTodoList.value.toMutableList()
-        if (fromIdx != -1 && insertIdx != -1 && fromIdx != insertIdx) {
-            // 转换插入下标为真实目标下标
+        val snapshot = dragSnapshotList.toMutableList()
+
+        if (fromIdx in snapshot.indices && insertIdx in 0..snapshot.size && fromIdx != insertIdx) {
             val targetIndex = if (insertIdx > fromIdx) insertIdx - 1 else insertIdx
-            val item = list.removeAt(fromIdx)
-            list.add(targetIndex.coerceIn(0, list.size), item)
-            stableOnOrderChanged.value(list)
+            val item = snapshot.removeAt(fromIdx)
+            snapshot.add(targetIndex.coerceIn(0, snapshot.size), item)
+            stableOnOrderChanged.value(snapshot)
         }
-        // 清空拖拽状态
+
+        // 重置拖拽状态
         draggingAffId = null
         dragStartIndex = -1
         dragInsertionIndex = -1
         dragRowBounds = emptyMap()
+        dragSnapshotList = emptyList()
         dragOffset = 0f
         dragScrollOffset = 0f
     }
@@ -219,7 +205,6 @@ fun NoteListArea(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            // 记录列表整体视口窗口坐标
             .onGloballyPositioned { coordinates ->
                 val top = coordinates.positionInWindow().y
                 listViewportTop = top
@@ -228,30 +213,26 @@ fun NoteListArea(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(todoList, key = { it.affId }) { todo ->
-            val currentIndex = todoList.indexOf(todo)
+            // 稳定获取当前索引，替代不稳定 indexOf
+            val currentIndex = todoList.indexOfFirst { it.affId == todo.affId }
             val nowMs = System.currentTimeMillis()
             val isOverdue = todo.endTime < nowMs || todo.isExpired == 1
             val isFinished = todo.isFinish == 1
             val isDimStyle = isOverdue && !isFinished
             val dimAlpha = if (isDimStyle) 0.55f else 1f
-            // 当前条目是否正在被拖动
             val isDraggingCurrent = draggingAffId == todo.affId
-            // 计算当前行视觉位移（拖动时中间行上下偏移）
+
+            // 拖动时中间条目位移计算（适配远距离拖动区间）
             val rowDisplacement = run {
                 val start = dragStartIndex
                 val insert = dragInsertionIndex
                 if (draggingAffId == null || start == -1 || insert == -1) return@run 0f
-                val stepPx = run {
-                    val current = dragRowBounds[todo.affId] ?: return@run 0f
-                    val next = dragRowBounds[todoList.getOrNull(currentIndex + 1)?.affId]
-                    if (next != null) return@run (next.top - current.top).coerceAtLeast(0f)
-                    val prev = dragRowBounds[todoList.getOrNull(currentIndex - 1)?.affId]
-                    if (prev != null) return@run (current.top - prev.top).coerceAtLeast(0f)
-                    current.bottom - current.top
-                }
+                val bounds = dragRowBounds[todo.affId] ?: return@run 0f
+                val itemHeight = bounds.bottom - bounds.top
+
                 when {
-                    insert > start && currentIndex in (start + 1) until insert -> -stepPx
-                    insert < start && currentIndex in insert until start -> stepPx
+                    insert > start && currentIndex in (start + 1) until insert -> -itemHeight
+                    insert < start && currentIndex in insert until start -> itemHeight
                     else -> 0f
                 }
             }
@@ -281,7 +262,6 @@ fun NoteListArea(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    // 拖动行缩放 + 所有行视觉位移
                     .scale(if (isDraggingCurrent) 1.02f else 1f)
                     .graphicsLayer {
                         translationY = if (isDraggingCurrent) dragOffset else rowDisplacement
@@ -334,7 +314,6 @@ fun NoteListArea(
                         .clickable(enabled = !batchMode && draggingAffId == null) {
                             onClickTodoItem(todo)
                         }
-                        // 记录每行实时窗口坐标
                         .onGloballyPositioned { coordinates ->
                             val topY = coordinates.positionInWindow().y
                             val bottomY = topY + coordinates.size.height
@@ -404,7 +383,6 @@ fun NoteListArea(
                                     )
                                     .padding(horizontal = 10.dp, vertical = 3.dp)
                             )
-                            // ========== 拖拽手柄：仅此处响应长按拖拽 ==========
                             if (!batchMode) {
                                 val stableIndex = rememberUpdatedState(currentIndex)
                                 val stableAff = rememberUpdatedState(todo.affId)
@@ -425,7 +403,7 @@ fun NoteListArea(
                                     onClick = {}
                                 ) {
                                     Icon(
-                                        painter = painterResource(id= R.drawable.drag),
+                                        painter = painterResource(id = R.drawable.drag),
                                         contentDescription = "长按拖动排序",
                                         tint = textColor.copy(alpha = dimAlpha)
                                     )

@@ -116,8 +116,6 @@ dependencies {
     ksp("androidx.room:room-compiler:2.5.0")
 
 //    日期控件
-    implementation("androidx.compose.material3:material3:1.3.0")
-
     //DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
