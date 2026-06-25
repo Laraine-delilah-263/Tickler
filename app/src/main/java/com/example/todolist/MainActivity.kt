@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +46,27 @@ class MainActivity : ComponentActivity() {
     private val todoDao by lazy { db.todoDao() }
     private val categoryDao by lazy { db.categoryDao() }
     private val priorityDao by lazy { db.priorityDao() }
+
+    // 校验分类下是否存在待办，执行删除
+    private fun checkAndDeleteCategory(
+        category: Category,
+        scope: kotlinx.coroutines.CoroutineScope,
+        onCannotDelete:()-> Unit
+        ) {
+        scope.launch(Dispatchers.IO) {
+            // 查询该分类下所有待办
+            val count = todoDao.countTodoByCategory(category.cataId)
+            if (count > 0) {
+                // 存在事务，弹出提醒
+                scope.launch(Dispatchers.Main) {
+                    onCannotDelete()
+                }
+            } else {
+                // 无关联事务，直接删除分类
+                categoryDao.deleteCategory(category.cataId)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,6 +106,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             TodoListTheme {
+                // 分类删除弹窗
+                var showCateWarnDialog by remember { mutableStateOf(false) }
+                var targetDeleteCate by remember { mutableStateOf<Category?>(null) }
                 // 详情弹窗
                 var showDetailDialog by remember { mutableStateOf(false) }
                 var targetDetailTodo by remember { mutableStateOf<TodoJoinData?>(null) }
@@ -259,8 +284,14 @@ class MainActivity : ComponentActivity() {
                                     onPrioritySelect = { selectPriority = it },
 //                                    监听高亮
                                     currentSelectCategory = selectCategory,
+                                    batchDeleteMode = batchManageMode,
                                     currentSelectPriority = selectPriority,
-
+                                    onCateDeleteClick ={cate->
+                                        checkAndDeleteCategory(cate,scope){
+                                            targetDeleteCate=cate
+                                            showCateWarnDialog=true
+                                        }
+                                    }
                                 )
                                 Box(
                                     modifier = Modifier
@@ -318,7 +349,7 @@ class MainActivity : ComponentActivity() {
                                         },
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
-                                            .padding(end=70.dp,bottom=24.dp),
+                                            .padding(end=75.dp,bottom=75.dp),
                                         shape = CircleShape,
                                         containerColor = mainColor
                                     ) {
@@ -356,6 +387,17 @@ class MainActivity : ComponentActivity() {
                                         selectedTodoIds.clear()
                                     }
                                 }
+                            }
+                        )
+                    }
+                    //挂载截止时间提醒弹窗
+                    // 过期提醒顶部弹窗
+                    if (showExpireDialog && currentExpireTodo != null) {
+                        TodoExpireTopToast(
+                            expireTodo = currentExpireTodo!!,
+                            onDismiss = {
+                                showExpireDialog = false
+                                currentExpireTodo = null
                             }
                         )
                     }
@@ -431,17 +473,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 )
-                //挂载截止时间提醒弹窗
-                // 过期提醒顶部弹窗
-                if (showExpireDialog && currentExpireTodo != null) {
-                    TodoExpireTopToast(
-                        expireTodo = currentExpireTodo!!,
-                        onDismiss = {
-                            showExpireDialog = false
-                            currentExpireTodo = null
-                        }
-                    )
-                }
                 // 新增自定义分类弹窗
                 AddCategoryDialog(
                     show = openAddCateDialog,
@@ -455,6 +486,19 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 )
+                // 分类存在待办时的提醒弹窗
+                if (showCateWarnDialog) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { showCateWarnDialog = false },
+                        title = { Text("无法删除") },
+                        text = { Text("该分类下仍有待办事务，请先删除相关事务后再操作！") },
+                        confirmButton = {
+                            androidx.compose.material3.TextButton(onClick = { showCateWarnDialog = false }) {
+                                Text("确定")
+                            }
+                        }
+                    )
+                }
             }
         }
     }

@@ -12,7 +12,8 @@ import kotlinx.coroutines.flow.Flow
 //事务数据访问对象，对数据库的各项操作进行封装
 @Dao
 interface TodoAffairDao {
-
+    @Query("SELECT COUNT(*) FROM todo_affair WHERE categoryId = :cateId")
+    suspend fun countTodoByCategory(cateId: Long): Int
     @Update
     suspend fun updateTodo(todo: TodoAffair)
     @Query("SELECT MAX(sortOrder) FROM todo_affair")
