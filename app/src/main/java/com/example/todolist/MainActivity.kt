@@ -3,6 +3,7 @@ package com.example.todolist
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -38,8 +39,16 @@ import kotlinx.coroutines.launch
 import com.example.todolist.ui.component.TodoExpireTopToast
 import com.example.todolist.ui.component.AddCategoryDialog
 import com.example.todolist.ui.component.TodoDetailDialog
+import com.example.todolist.viewmodel.MainViewModel
+import com.example.todolist.viewmodel.MainViewModelFactory
+import androidx.lifecycle.viewModelScope
 
 class MainActivity : ComponentActivity() {
+
+    // 新增：获取ViewModel实例
+    private val mainVm: MainViewModel by viewModels {
+        MainViewModelFactory(application)
+    }
 
     //初始化数据库与Dao
     private val db by lazy { AppDatabase.getDatabase(applicationContext) }
@@ -72,38 +81,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 //        数据库和表的创建
 //        默认初始化数据：IO协程执行，判空后再插入
-        kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
-            // 1. 判断分类表是否为空
-            val categoryList = categoryDao.getCategoryList()
-            if (categoryList.isEmpty()) {
-                categoryDao.insertCategory(Category(label = "日常事务"))
-            }
-            // 2. 判断优先级表是否为空
-            val priorityList = priorityDao.getPriorityList()
-            if (priorityList.isEmpty()) {
-                priorityDao.insertPriority(Priority(levelName = "常规"))
-                priorityDao.insertPriority(Priority(levelName = "暂缓"))
-                priorityDao.insertPriority(Priority(levelName = "重要"))
-                priorityDao.insertPriority(Priority(levelName = "紧急"))
-            }
-            // 3. 判断待办表是否为空，插入第一条默认待办
-            val todoList = todoDao.getAllTodo()
-            if (todoList.isEmpty()) {
-                val now = System.currentTimeMillis()
-                val endTime = now + 24 * 3600_000
-                val todo = TodoAffair(
-                    title = "初始待办",
-                    detail = "系统默认第一条待办事项",
-                    startTime = now,
-                    endTime = endTime,
-                    categoryId = 1,
-                    priorityId = 1,
-                    hasReminded = 0
-                )
-                todoDao.insertTodo(todo)
-            }
-        }
-
+        mainVm.initDatabaseDefaultData()
         setContent {
             TodoListTheme {
                 // 分类删除弹窗
@@ -480,10 +458,7 @@ class MainActivity : ComponentActivity() {
                     bgCardColor = contentCardBg,
                     closeDialog = { openAddCateDialog = false },
                     saveNewCategory = { labelName ->
-                        scope.launch(Dispatchers.IO) {
-                            // 插入新分类到数据库
-                            categoryDao.insertCategory(Category(label = labelName))
-                        }
+                        mainVm.createCategory(labelName)
                     }
                 )
                 // 分类存在待办时的提醒弹窗
