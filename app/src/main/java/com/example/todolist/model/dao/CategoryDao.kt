@@ -37,7 +37,6 @@ interface CategoryDao {
     @Query("SELECT * FROM category")
     fun getAllCategory(): Flow<List<Category>>
 
-
 //    更新数据
     @Update
     suspend fun updataCategory(newCategory: Category)

@@ -56,37 +56,16 @@ class MainActivity : ComponentActivity() {
     private val categoryDao by lazy { db.categoryDao() }
     private val priorityDao by lazy { db.priorityDao() }
 
-    // 校验分类下是否存在待办，执行删除
-    private fun checkAndDeleteCategory(
-        category: Category,
-        scope: kotlinx.coroutines.CoroutineScope,
-        onCannotDelete:()-> Unit
-        ) {
-        scope.launch(Dispatchers.IO) {
-            // 查询该分类下所有待办
-            val count = todoDao.countTodoByCategory(category.cataId)
-            if (count > 0) {
-                // 存在事务，弹出提醒
-                scope.launch(Dispatchers.Main) {
-                    onCannotDelete()
-                }
-            } else {
-                // 无关联事务，直接删除分类
-                categoryDao.deleteCategory(category.cataId)
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        数据库和表的创建
 //        默认初始化数据：IO协程执行，判空后再插入
         mainVm.initDatabaseDefaultData()
+
         setContent {
             TodoListTheme {
                 // 分类删除弹窗
                 var showCateWarnDialog by remember { mutableStateOf(false) }
-                var targetDeleteCate by remember { mutableStateOf<Category?>(null) }
                 // 详情弹窗
                 var showDetailDialog by remember { mutableStateOf(false) }
                 var targetDetailTodo by remember { mutableStateOf<TodoJoinData?>(null) }
@@ -175,7 +154,7 @@ class MainActivity : ComponentActivity() {
                         if (expireTodo != null) {
                             currentExpireTodo = expireTodo
                             showExpireDialog = true
-                            todoDao.markTodoReminded(expireTodo.affId)
+                            mainVm.setTodoReminded(expireTodo.affId)
                         }
                         delay(1000)
                     }
@@ -265,8 +244,7 @@ class MainActivity : ComponentActivity() {
                                     batchDeleteMode = batchManageMode,
                                     currentSelectPriority = selectPriority,
                                     onCateDeleteClick ={cate->
-                                        checkAndDeleteCategory(cate,scope){
-                                            targetDeleteCate=cate
+                                        mainVm.checkAndDeleteCategory(cate.cataId){
                                             showCateWarnDialog=true
                                         }
                                     }
@@ -281,19 +259,13 @@ class MainActivity : ComponentActivity() {
                                         cardBg = contentCardBg,
                                         textColor = textPrimary,
                                         mainColor = mainColor,
-//                                        todoList=todoDataSource,
                                         todoList = filterTodoList,
                                         selectStroke = selectStrokeColor,
                                         onDeleteTodo = { targetTodoId ->
-                                            scope.launch(Dispatchers.IO) {
-                                                val todo = todoDao.getTodoById(targetTodoId)
-                                                todo?.let { todoDao.deleteTodoById(targetTodoId) }
-                                            }
+                                            mainVm.deleteSingleTodo(targetTodoId)
                                         },
                                         onMarkComplete = { targetTodoId ->
-                                            scope.launch(Dispatchers.IO) {
-                                                todoDao.markTodoFinish(targetTodoId)
-                                            }
+                                            mainVm.finishTodoItem(targetTodoId)
                                         },
                                         // 拖拽排序回调：新顺序列表
                                         onOrderChanged = { newSortList ->
@@ -303,7 +275,7 @@ class MainActivity : ComponentActivity() {
                                                     val originTodo = todoDao.getTodoById(joinData.affId)
                                                     originTodo?.copy(sortOrder = index)
                                                 }.filterNotNull()
-                                                todoDao.batchUpdateTodo(updateData)
+                                                mainVm.updateTodoSort(updateData)
                                             }
                                         },
                                         batchMode = batchManageMode,
@@ -353,17 +325,9 @@ class MainActivity : ComponentActivity() {
                             onBatchDelete = {
                                 // 先复制一份选中ID快照，避免过程中集合变化
                                 val idsToDelete = selectedTodoIds.toList()
-                                scope.launch(Dispatchers.IO) {
-//                                    println("批量删除选中ID：$idsToDelete")
-                                    if (idsToDelete.isNotEmpty()) {
-                                        todoDao.batchDeleteTodo(idsToDelete)
-//                                        println("批量删除执行完成")
-                                    }
-                                    // 数据库删除完成后，再切回主线程清空UI状态
-                                    scope.launch(Dispatchers.Main) {
-                                        batchManageMode = false
-                                        selectedTodoIds.clear()
-                                    }
+                                mainVm.batchDeleteTodo(idsToDelete){
+                                    batchManageMode = false
+                                    selectedTodoIds.clear()
                                 }
                             }
                         )
@@ -394,10 +358,8 @@ class MainActivity : ComponentActivity() {
                                 val originTodo = todoDao.getTodoById(currentTodo.affId) ?: return@launch
                                 val nowTime = System.currentTimeMillis()
                                 val newIsExpiredInt = if (endTime < nowTime) 1 else 0
-
                                 val safeCateId = cateId ?: originTodo.categoryId
                                 val safePrioId = prioId ?: originTodo.priorityId
-
                                 val updatedEntity = originTodo.copy(
                                     title = title,
                                     detail = content,
@@ -408,12 +370,10 @@ class MainActivity : ComponentActivity() {
                                     isFinish = 0,         // 强制置为未完成，取消文字划线
                                     hasReminded = 0       // 重置提醒，到期再次弹窗
                                 )
-                                todoDao.updateTodo(updatedEntity)
-
-                                scope.launch(Dispatchers.Main) {
-                                    showDetailDialog = false
-                                    targetDetailTodo = null
-                                }
+                                mainVm.updateTodoEntity(updatedEntity)
+//                                主线程关闭弹窗
+                                showDetailDialog = false
+                                targetDetailTodo = null
                             }
                         },
                         onClose = {
@@ -437,7 +397,7 @@ class MainActivity : ComponentActivity() {
                             val now = System.currentTimeMillis()
                             //标题固定，内容填输入文字，截止时间=当天+选定时分，分类/优先级暂时null
                             val maxSort=todoDao.getMaxSortOrder()?:0
-                            val todo = TodoAffair(
+                            val newTodo = TodoAffair(
                                 title = titleInput,
                                 detail = content,
                                 startTime = now,
@@ -447,7 +407,7 @@ class MainActivity : ComponentActivity() {
                                 hasReminded = 0,
                                 sortOrder = maxSort+1
                             )
-                            todoDao.insertTodo(todo)
+                            mainVm.addNewTodo(newTodo)
                         }
                     }
                 )
@@ -461,7 +421,7 @@ class MainActivity : ComponentActivity() {
                         mainVm.createCategory(labelName)
                     }
                 )
-                // 分类存在待办时的提醒弹窗
+                //                // 分类存在待办时的提醒弹窗
                 if (showCateWarnDialog) {
                     androidx.compose.material3.AlertDialog(
                         onDismissRequest = { showCateWarnDialog = false },

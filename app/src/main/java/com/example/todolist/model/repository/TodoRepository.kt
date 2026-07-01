@@ -32,4 +32,56 @@ class TodoRepository(
             todoDao.insertTodo(todo)
         }
     }
+
+//    新增待办入库
+    suspend fun insertNewTodo(todo: TodoAffair) {
+        todoDao.insertTodo(todo)
+    }
+
+//    获取最大排序号
+    suspend fun getMaxSortOrder(): Int? {
+    return todoDao.getMaxSortOrder()
+}
+
+//    根据id删除单条待办
+    suspend fun deleteSingleTodoById(affId: Long) {
+    todoDao.deleteTodoById(affId)
+}
+
+//    标记待办为已完成
+    suspend fun markTodoFinished(affId: Long) {
+        todoDao.markTodoFinish(affId)
+    }
+
+//    新增完整待办实体
+    suspend fun updateTodoItem(todo: TodoAffair) {
+        todoDao.updateTodo(todo)
+    }
+
+//    根据单条id查询原事务内容返回编辑列表
+    suspend fun getTodoEntityById(affId: Long?): TodoAffair? {
+        if(affId == null) return null
+        return todoDao.getTodoById(affId)
+    }
+
+//    批量删除事务
+    suspend fun batchDeleteTodo(ids: List<Long>) {
+        todoDao.batchDeleteTodo(ids)
+    }
+
+//    批量更新待办排序
+    suspend fun batchUpdateTodoSort(todoList: List<TodoAffair>) {
+        todoDao.batchUpdateTodo(todoList)
+    }
+
+//    根据id查询单条原始待办（组装排序实体）
+    suspend fun getTodoById(affId: Long): TodoAffair? {
+        return todoDao.getTodoById(affId)
+    }
+
+//     将待办标记为已弹出过期提醒
+    suspend fun markTodoReminded(affId: Long) {
+        todoDao.markTodoReminded(affId)
+    }
+
 }
