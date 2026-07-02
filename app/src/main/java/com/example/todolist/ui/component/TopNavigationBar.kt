@@ -20,10 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.todolist.R
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.Dispatchers
 import androidx.compose.ui.platform.LocalFocusManager
 
 
@@ -34,8 +31,6 @@ fun TopNavigationBar(
     onSearchChange: (String) -> Unit,
     textColor: Color,
     searchFocusRequester: FocusRequester,
-    globalKeyboardController: SoftwareKeyboardController?,
-    globalScope: CoroutineScope,
     onFocusChange: (Boolean) -> Unit,
     isSearchFocused: Boolean
 ) {
@@ -64,7 +59,9 @@ fun TopNavigationBar(
             )
         }
 //原生自带边框线，不用text额外设置
-        Box(modifier = Modifier.weight(1f).padding(horizontal = 20.dp)){
+        Box(modifier = Modifier
+            .weight(1f)
+            .padding(horizontal = 20.dp)) {
             OutlinedTextField(
                 value = searchText,//输入框实时显示的文本
                 onValueChange = onSearchChange,//用户输入、删除字符触发回调，把新文本赋值给searchText
@@ -72,7 +69,7 @@ fun TopNavigationBar(
                     .fillMaxWidth()
                     .height(56.dp)
                     .focusRequester(searchFocusRequester)//绑定焦点控制器
-                    .onFocusChanged{ state ->
+                    .onFocusChanged { state ->
                         onFocusChange(state.isFocused)
                     },
                 placeholder = {
@@ -93,13 +90,13 @@ fun TopNavigationBar(
                 },
 //            清空图标
                 trailingIcon = {
-                    if (searchText.isNotBlank()){
+                    if (searchText.isNotBlank()) {
                         Image(
                             painter = painterResource(id = R.drawable.cancle),
                             contentDescription = "清空搜索框",
                             modifier = Modifier
                                 .size(20.dp)
-                                .clickable{
+                                .clickable {
                                     onSearchChange("")
                                     // 1. 立即隐藏键盘并清除焦点
                                     focusManager.clearFocus()
@@ -119,7 +116,7 @@ fun TopNavigationBar(
                     unfocusedContainerColor = Color.Transparent //未选中输入框背景：完全透明
                 )
             )
-            if(!isSearchFocused){
+            if (!isSearchFocused) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
@@ -142,7 +139,7 @@ fun TopNavigationBar(
                 .height(50.dp),
             shape = RoundedCornerShape(10.dp),
         ) {
-            Text(text="搜索", fontSize = 20.sp)
+            Text(text = "搜索", fontSize = 20.sp)
         }
 
         Spacer(modifier = Modifier.width(2.dp))

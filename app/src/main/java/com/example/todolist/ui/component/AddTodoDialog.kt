@@ -35,6 +35,8 @@ import com.example.todolist.model.entity.Priority
 import java.time.Instant
 import java.time.ZoneId
 
+
+//添加事务弹窗
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,14 +65,14 @@ fun AddTodoDialog(
     // 右侧分步状态：true=选日历，false=选时分
     var showDatePage by remember { mutableStateOf(true) }
 
-    // 日期选择器（禁用过去时间）
+    // 日期选择器，禁用过去时间
     val datePickerState = rememberDatePickerState(
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 val now = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
                 val targetDate =
                     Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-                // 目标日期 >= 今天 即可选择
+                // 目标日期 >= 今天 可选
                 return !targetDate.isBefore(now)
             }
         }
@@ -83,7 +85,7 @@ fun AddTodoDialog(
         is24Hour = true
     )
 
-    // 获取今天23:59的时间戳作为默认截止日期
+    // 获取今天23:59的时间戳作为默认截止日期，但是似乎和时分选择器冲突了
     val defaultEndOfDay = remember {
         val nowLocalDate = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate()
         val endOfDay = nowLocalDate.atTime(23, 59)
@@ -96,7 +98,6 @@ fun AddTodoDialog(
             showDatePage = false
         }
     }
-
 
     Dialog(
         onDismissRequest = closeDialog,
@@ -114,7 +115,7 @@ fun AddTodoDialog(
                 .padding(16.dp),
             verticalAlignment = Alignment.Top
         ) {
-            // ========== 左侧固定表单栏 ==========
+            //左侧固定表单栏
             Column(
                 modifier = Modifier
                     .weight(0.4f)
@@ -254,7 +255,7 @@ fun AddTodoDialog(
                 color = textColor.copy(alpha = 0.2f)
             )
 
-            // ========== 右侧分步切换区域 ==========
+            //右侧分步切换区域
             Column(
                 modifier = Modifier
                     .weight(0.6f)
@@ -294,7 +295,7 @@ fun AddTodoDialog(
                             )
                         }
                     }
-                    // 切换按钮固定右下角
+                    // 切换按钮固定在右下角
                     Button(
                         onClick = { showDatePage = !showDatePage },
                         modifier = Modifier

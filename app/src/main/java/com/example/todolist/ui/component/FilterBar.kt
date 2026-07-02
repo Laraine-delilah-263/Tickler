@@ -27,12 +27,12 @@ fun FilterBar(
     textColor: Color,
     mainColor: Color,
     dividerColor: Color,
-    categoryList:List<Category>,//分类标签数据
-    priorityList:List<Priority>,//等级标签数据
-    onCategorySelect:(String)->Unit,
-    onPrioritySelect:(String)->Unit,
-    currentSelectCategory:String,
-    currentSelectPriority:String,
+    categoryList: List<Category>,//分类标签数据
+    priorityList: List<Priority>,//等级标签数据
+    onCategorySelect: (String) -> Unit,
+    onPrioritySelect: (String) -> Unit,
+    currentSelectCategory: String,
+    currentSelectPriority: String,
     batchDeleteMode: Boolean, // 批量模式开关，控制是否显示删除叉
     onCateDeleteClick: (Category) -> Unit // 分类删除回调
 ) {
@@ -49,21 +49,25 @@ fun FilterBar(
         ) {
             FilterChip(
                 text = "全部分类",
-                textColor = if(currentSelectCategory == "全部分类") Color.White else textColor,
-                bgColor = if(currentSelectCategory == "全部分类") mainColor else mainColor.copy(alpha = 0.1f),
-                onClick = { onCategorySelect("全部分类")},
-                showDeleteIcon=false,
-                onDeleteClick={}
+                textColor = if (currentSelectCategory == "全部分类") Color.White else textColor,
+                bgColor = if (currentSelectCategory == "全部分类") mainColor else mainColor.copy(
+                    alpha = 0.1f
+                ),
+                onClick = { onCategorySelect("全部分类") },
+                showDeleteIcon = false,
+                onDeleteClick = {}
             )
 //            数据库循环渲染分类
-            categoryList.forEach { cate->
+            categoryList.forEach { cate ->
                 FilterChip(
                     text = cate.label,
-                    textColor = if(currentSelectCategory == cate.label) Color.White else textColor,
-                    bgColor = if(currentSelectCategory == cate.label) mainColor else mainColor.copy(alpha = 0.1f),
-                    onClick = { onCategorySelect(cate.label )},
-                    showDeleteIcon=batchDeleteMode,
-                    onDeleteClick={
+                    textColor = if (currentSelectCategory == cate.label) Color.White else textColor,
+                    bgColor = if (currentSelectCategory == cate.label) mainColor else mainColor.copy(
+                        alpha = 0.1f
+                    ),
+                    onClick = { onCategorySelect(cate.label) },
+                    showDeleteIcon = batchDeleteMode,
+                    onDeleteClick = {
                         onCateDeleteClick(cate)
                     }
                 )
@@ -79,9 +83,11 @@ fun FilterBar(
             // 固定全部选项
             FilterChip(
                 text = "全部等级",
-                textColor = if(currentSelectPriority == "全部等级") Color.White else textColor,
-                bgColor = if(currentSelectPriority == "全部等级") mainColor else mainColor.copy(alpha = 0.1f),
-                onClick = { onPrioritySelect ("全部等级")},
+                textColor = if (currentSelectPriority == "全部等级") Color.White else textColor,
+                bgColor = if (currentSelectPriority == "全部等级") mainColor else mainColor.copy(
+                    alpha = 0.1f
+                ),
+                onClick = { onPrioritySelect("全部等级") },
                 showDeleteIcon = false,
                 onDeleteClick = {}
             )
@@ -89,9 +95,11 @@ fun FilterBar(
             priorityList.forEach { prio ->
                 FilterChip(
                     text = prio.levelName,
-                    textColor = if(currentSelectPriority == prio.levelName) Color.White else textColor,
-                    bgColor = if(currentSelectPriority == prio.levelName) mainColor else mainColor.copy(alpha = 0.1f),
-                    onClick = { onPrioritySelect (prio.levelName)},
+                    textColor = if (currentSelectPriority == prio.levelName) Color.White else textColor,
+                    bgColor = if (currentSelectPriority == prio.levelName) mainColor else mainColor.copy(
+                        alpha = 0.1f
+                    ),
+                    onClick = { onPrioritySelect(prio.levelName) },
                     showDeleteIcon = false,
                     onDeleteClick = {}
                 )
@@ -107,7 +115,7 @@ fun FilterChip(
     text: String,
     textColor: Color,
     bgColor: Color,
-    onClick:()->Unit,
+    onClick: () -> Unit,
     showDeleteIcon: Boolean,
     onDeleteClick: () -> Unit
 ) {
@@ -118,20 +126,21 @@ fun FilterChip(
                 shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 12.dp, vertical = 6.dp)
-            .clickable (onClick = onClick)
+            .clickable(onClick = onClick)
     ) {
         Text(text = text, color = textColor)
-        if (showDeleteIcon){
-            Box(modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x=8.dp,y=(-8.dp))
-                .size(24.dp)
-                .background(Color.Gray, CircleShape)//Color(0xFFF44336)Color(0xFFEEEEEE)
-                .clickable{
-                    onDeleteClick()
-                },
+        if (showDeleteIcon) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 8.dp, y = (-8.dp))
+                    .size(24.dp)
+                    .background(Color.Gray, CircleShape)//Color(0xFFF44336)Color(0xFFEEEEEE)
+                    .clickable {
+                        onDeleteClick()
+                    },
                 contentAlignment = Alignment.Center
-            ){
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.cancle),
                     contentDescription = "删除标签",

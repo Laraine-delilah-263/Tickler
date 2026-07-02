@@ -14,15 +14,20 @@ import kotlinx.coroutines.flow.Flow
 interface TodoAffairDao {
     @Query("SELECT COUNT(*) FROM todo_affair WHERE categoryId = :cateId")
     suspend fun countTodoByCategory(cateId: Long): Int
+
     @Update
     suspend fun updateTodo(todo: TodoAffair)
+
     @Query("SELECT MAX(sortOrder) FROM todo_affair")
     suspend fun getMaxSortOrder(): Int?
+
     @Update
     suspend fun batchUpdateTodo(todoList: List<TodoAffair>)
+
     // 批量删除：根据affId集合删除多条待办
     @Query("DELETE FROM todo_affair WHERE affId IN (:idList)")
     suspend fun batchDeleteTodo(idList: List<Long>)
+
     // 将待办标记为已弹出过期提醒
     @Query("UPDATE todo_affair SET hasReminded = 1 WHERE affId = :id")
     suspend fun markTodoReminded(id: Long)
@@ -30,7 +35,7 @@ interface TodoAffairDao {
     @Query("UPDATE todo_affair SET isFinish = 1 WHERE affId = :id")
     suspend fun markTodoFinish(id: Long)
 
-    // 根据主键查询单条事务（闹钟广播读取）
+    // 根据主键查询单条事务
     @Query("SELECT * FROM todo_affair WHERE affId = :id")
     suspend fun getTodoById(id: Long): TodoAffair?
 
@@ -38,11 +43,11 @@ interface TodoAffairDao {
     @Query("UPDATE todo_affair SET isExpired = 1 WHERE affId = :id")
     suspend fun markTodoExpired(id: Long)
 
-    // 根据实体删除事务（左滑删除用）
+    // 根据实体删除事务
     @Delete
     suspend fun deleteTodoByEntity(todo: TodoAffair)
 
-//    删除单条事务
+    //    删除单条事务
     @Query("DELETE FROM todo_affair WHERE affId = :id")
     suspend fun deleteTodoById(id: Long)
 
@@ -51,10 +56,11 @@ interface TodoAffairDao {
     suspend fun insertTodo(todo: TodoAffair): Long
 
     @Query("SELECT * FROM todo_affair")
-    suspend fun getAllTodo():List<TodoAffair>
+    suspend fun getAllTodo(): List<TodoAffair>
 
-//    添加三表联查sql
-    @Query("""
+    //    添加三表联查sql
+    @Query(
+        """
         SELECT t.*, p.levelName, c.label
         FROM todo_affair t
         LEFT JOIN priority p ON t.priorityId = p.prioId

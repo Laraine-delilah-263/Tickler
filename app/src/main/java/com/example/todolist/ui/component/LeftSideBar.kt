@@ -21,7 +21,7 @@ fun LeftSideBar(
     textColor: Color,
     mainColor: Color,
     dividerColor: Color,
-    onAddTagClick:()-> Unit,
+    onAddTagClick: () -> Unit,
     onBatchClick: () -> Unit
 ) {
     Column(
@@ -37,7 +37,7 @@ fun LeftSideBar(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        listOf( "批量管理", "自定义标签").forEach { func ->
+        listOf("批量管理", "自定义标签").forEach { func ->
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -48,9 +48,9 @@ fun LeftSideBar(
                     )
                     .padding(vertical = 12.dp, horizontal = 16.dp)
                     .clickable {
-                        when(func){
+                        when (func) {
                             "批量管理" -> onBatchClick()
-                            "自定义标签"->onAddTagClick()
+                            "自定义标签" -> onAddTagClick()
                         }
                     }
             ) {

@@ -38,7 +38,7 @@ fun BottomStatusBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        if(batchMode){
+        if (batchMode) {
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
@@ -47,21 +47,21 @@ fun BottomStatusBar(
             ) {
                 Text("批量删除($selectedCount)")
             }
-        }else{
-                Text(
-                    text = "当前模式：${if (isDarkMode) "夜间模式" else "日间模式"}",
-                    color = textColor,
-                    style = MaterialTheme.typography.bodySmall
-                )
+        } else {
+            Text(
+                text = "当前模式：${if (isDarkMode) "夜间模式" else "日间模式"}",
+                color = textColor,
+                style = MaterialTheme.typography.bodySmall
+            )
 
-                Switch(
-                    checked = isDarkMode,
-                    onCheckedChange = onModeChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = mainColor,
-                        checkedTrackColor = mainColor.copy(alpha = 0.5f)
-                    )
+            Switch(
+                checked = isDarkMode,
+                onCheckedChange = onModeChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = mainColor,
+                    checkedTrackColor = mainColor.copy(alpha = 0.5f)
                 )
+            )
         }
 
     }

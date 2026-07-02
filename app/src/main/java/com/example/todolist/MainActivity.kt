@@ -39,31 +39,27 @@ import com.example.todolist.ui.component.AddCategoryDialog
 import com.example.todolist.ui.component.TodoDetailDialog
 import com.example.todolist.viewmodel.MainViewModel
 import com.example.todolist.viewmodel.MainViewModelFactory
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLifecycleOwner
 
 class MainActivity : ComponentActivity() {
-    // 新增：获取ViewModel实例
+    // 获取ViewModel实例
     private val mainVm: MainViewModel by viewModels {
         MainViewModelFactory(application)
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        数据库和表的创建
-//        默认初始化数据：IO协程执行，判空后再插入
         mainVm.initDatabaseDefaultData()
-
         setContent {
             TodoListTheme {
-                // 分类删除弹窗
+//                分类删除弹窗
                 var showCateWarnDialog by remember { mutableStateOf(false) }
-                // 详情弹窗
+//                详情弹窗
                 var showDetailDialog by remember { mutableStateOf(false) }
                 var targetDetailTodo by remember { mutableStateOf<TodoJoinData?>(null) }
-//              批量管理模式开关
+//                批量管理模式开关
                 var batchManageMode by remember { mutableStateOf(false) }
-//              存储选中的待办affId
+//                存储选中的待办affId
                 val selectedTodoIds = remember { mutableStateListOf<Long>() }
 //                新增标签弹窗
                 var openAddCateDialog by remember { mutableStateOf(false) }
@@ -80,7 +76,7 @@ class MainActivity : ComponentActivity() {
                 //弹窗控制标记
                 var openAddDialog by remember { mutableStateOf(false) }
                 val lifecycleOwner = LocalLifecycleOwner.current
-
+//                筛选搜索
                 val currentSearch by mainVm.searchKeyword.collectAsStateWithLifecycle(
                     initialValue = "",
                     lifecycle = lifecycleOwner.lifecycle
@@ -108,9 +104,9 @@ class MainActivity : ComponentActivity() {
 
                 // 实时检测过期未完成待办
                 LaunchedEffect(filterTodoList) {
-                    while(true){
+                    while (true) {
                         val nowTime = System.currentTimeMillis()
-                        if(showExpireDialog){
+                        if (showExpireDialog) {
                             delay(1000)
                             continue
                         }
@@ -118,7 +114,7 @@ class MainActivity : ComponentActivity() {
                             // 条件：截止时间 < 当前时间 + 未完成 + 未提醒过
                             todo.endTime < nowTime
                                     && todo.isExpired == 0
-                                    && todo.isFinish==0
+                                    && todo.isFinish == 0
                                     && todo.hasReminded == 0
                         }
                         if (expireTodo != null) {
@@ -180,16 +176,16 @@ class MainActivity : ComponentActivity() {
                             },
                             textColor = textPrimary,
                             searchFocusRequester = searchFocusRequester,
-                            globalKeyboardController = keyboardController,
-                            globalScope = scope,
                             onFocusChange = { newState ->
                                 isSearchFocused = newState
                             },
                             isSearchFocused = isSearchFocused,
                         )
-                        Row(modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
                             LeftSideBar(
                                 modifier = Modifier.width(220.dp),
                                 bgColor = sideBarBg,
@@ -202,7 +198,7 @@ class MainActivity : ComponentActivity() {
                                     selectedTodoIds.clear()
                                 }
                             )
-                                    Column {
+                            Column {
                                 FilterBar(
                                     textColor = textPrimary,
                                     mainColor = mainColor,
@@ -218,9 +214,9 @@ class MainActivity : ComponentActivity() {
                                     currentSelectCategory = currentCateFilter,
                                     currentSelectPriority = currentPrioFilter,
                                     batchDeleteMode = batchManageMode,
-                                    onCateDeleteClick ={cate->
-                                        mainVm.checkAndDeleteCategory(cate.cataId){
-                                            showCateWarnDialog=true
+                                    onCateDeleteClick = { cate ->
+                                        mainVm.checkAndDeleteCategory(cate.cataId) {
+                                            showCateWarnDialog = true
                                         }
                                     }
                                 )
@@ -246,10 +242,12 @@ class MainActivity : ComponentActivity() {
                                         onOrderChanged = { newSortList ->
                                             scope.launch(Dispatchers.IO) {
                                                 // 按拖拽后的顺序重新赋值sortOrder
-                                                val updateData = newSortList.mapIndexed { index, joinData ->
-                                                    val originTodo = mainVm.getTodoEntity(joinData.affId)
-                                                    originTodo?.copy(sortOrder = index)
-                                                }.filterNotNull()
+                                                val updateData =
+                                                    newSortList.mapIndexed { index, joinData ->
+                                                        val originTodo =
+                                                            mainVm.getTodoEntity(joinData.affId)
+                                                        originTodo?.copy(sortOrder = index)
+                                                    }.filterNotNull()
                                                 mainVm.updateTodoSort(updateData)
                                             }
                                         },
@@ -274,7 +272,7 @@ class MainActivity : ComponentActivity() {
                                         },
                                         modifier = Modifier
                                             .align(Alignment.BottomEnd)
-                                            .padding(end=75.dp,bottom=75.dp),
+                                            .padding(end = 75.dp, bottom = 75.dp),
                                         shape = CircleShape,
                                         containerColor = mainColor
                                     ) {
@@ -300,7 +298,7 @@ class MainActivity : ComponentActivity() {
                             onBatchDelete = {
                                 // 先复制一份选中ID快照，避免过程中集合变化
                                 val idsToDelete = selectedTodoIds.toList()
-                                mainVm.batchDeleteTodo(idsToDelete){
+                                mainVm.batchDeleteTodo(idsToDelete) {
                                     batchManageMode = false
                                     selectedTodoIds.clear()
                                 }
@@ -330,7 +328,8 @@ class MainActivity : ComponentActivity() {
                         priorityList = allPriority,
                         onUpdateTodo = { title, content, cateId, prioId, endTime ->
                             scope.launch(Dispatchers.IO) {
-                                val originTodo = mainVm.getTodoEntity(currentTodo.affId) ?: return@launch
+                                val originTodo =
+                                    mainVm.getTodoEntity(currentTodo.affId) ?: return@launch
                                 val nowTime = System.currentTimeMillis()
                                 val newIsExpiredInt = if (endTime < nowTime) 1 else 0
                                 val safeCateId = cateId ?: originTodo.categoryId
@@ -371,7 +370,7 @@ class MainActivity : ComponentActivity() {
                         scope.launch(Dispatchers.IO) {
                             val now = System.currentTimeMillis()
                             //标题固定，内容填输入文字，截止时间=当天+选定时分，分类/优先级暂时null
-                            val maxSort=mainVm.getMaxSortNum()?:0
+                            val maxSort = mainVm.getMaxSortNum() ?: 0
                             val newTodo = TodoAffair(
                                 title = titleInput,
                                 detail = content,
@@ -380,7 +379,7 @@ class MainActivity : ComponentActivity() {
                                 categoryId = cateId,
                                 priorityId = prioId,
                                 hasReminded = 0,
-                                sortOrder = maxSort+1
+                                sortOrder = maxSort + 1
                             )
                             mainVm.addNewTodo(newTodo)
                         }
@@ -403,7 +402,9 @@ class MainActivity : ComponentActivity() {
                         title = { Text("无法删除") },
                         text = { Text("该分类下仍有待办事务，请先删除相关事务后再操作！") },
                         confirmButton = {
-                            androidx.compose.material3.TextButton(onClick = { showCateWarnDialog = false }) {
+                            androidx.compose.material3.TextButton(onClick = {
+                                showCateWarnDialog = false
+                            }) {
                                 Text("确定")
                             }
                         }

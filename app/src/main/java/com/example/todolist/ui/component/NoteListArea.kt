@@ -135,7 +135,7 @@ fun NoteListArea(
         }
     }
 
-    // 拖拽开始：快照完整列表+坐标，彻底隔离实时列表干扰
+    // 拖拽开始：快照完整列表+坐标，隔离实时列表干扰
     fun onDragStart(fingerY: Float, startIdx: Int, affId: Long) {
         draggingAffId = affId
         dragStartIndex = startIdx
@@ -167,10 +167,12 @@ fun NoteListArea(
                     targetInsert = bounds.index
                     break
                 }
+
                 fingerScreenY < visualBottom -> {
                     targetInsert = bounds.index + 1
                     break
                 }
+
                 else -> targetInsert = bounds.index + 1
             }
         }
@@ -213,7 +215,6 @@ fun NoteListArea(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(todoList, key = { it.affId }) { todo ->
-            // 稳定获取当前索引，替代不稳定 indexOf
             val currentIndex = todoList.indexOfFirst { it.affId == todo.affId }
             val nowMs = System.currentTimeMillis()
             val isOverdue = todo.endTime < nowMs || todo.isExpired == 1
@@ -222,7 +223,7 @@ fun NoteListArea(
             val dimAlpha = if (isDimStyle) 0.55f else 1f
             val isDraggingCurrent = draggingAffId == todo.affId
 
-            // 拖动时中间条目位移计算（适配远距离拖动区间）
+            // 拖动时中间条目位移计算
             val rowDisplacement = run {
                 val start = dragStartIndex
                 val insert = dragInsertionIndex
@@ -245,10 +246,12 @@ fun NoteListArea(
                             onMarkComplete(todo.affId)
                             false
                         }
+
                         EndToStart -> {
                             onDeleteTodo(todo.affId)
                             true
                         }
+
                         else -> false
                     }
                 },
@@ -274,8 +277,18 @@ fun NoteListArea(
                             .fillMaxSize()
                             .background(
                                 when (swipeState.targetValue) {
-                                    StartToEnd -> lerp(Color.Transparent, Color(0xFF2196F3), progress)
-                                    EndToStart -> lerp(Color.Transparent, Color(0xFFF44336), progress)
+                                    StartToEnd -> lerp(
+                                        Color.Transparent,
+                                        Color(0xFF2196F3),
+                                        progress
+                                    )
+
+                                    EndToStart -> lerp(
+                                        Color.Transparent,
+                                        Color(0xFFF44336),
+                                        progress
+                                    )
+
                                     else -> Color.Transparent
                                 }
                             ),
@@ -292,12 +305,14 @@ fun NoteListArea(
                                 tint = Color.White,
                                 modifier = Modifier.padding(horizontal = 20.dp)
                             )
+
                             EndToStart -> Icon(
                                 painter = painterResource(id = R.drawable.delete),
                                 contentDescription = "删除事务",
                                 tint = Color.White,
                                 modifier = Modifier.padding(horizontal = 20.dp)
                             )
+
                             else -> Unit
                         }
                     }
@@ -354,7 +369,9 @@ fun NoteListArea(
                                     androidx.compose.material3.Checkbox(
                                         checked = selectedIds.contains(todo.affId),
                                         onCheckedChange = { onToggleSelect(todo.affId) },
-                                        colors = androidx.compose.material3.CheckboxDefaults.colors(checkedColor = mainColor)
+                                        colors = androidx.compose.material3.CheckboxDefaults.colors(
+                                            checkedColor = mainColor
+                                        )
                                     )
                                 }
                                 Box(
@@ -390,7 +407,11 @@ fun NoteListArea(
                                     modifier = Modifier.pointerInput(todo.affId) {
                                         detectDragGesturesAfterLongPress(
                                             onDragStart = { offset ->
-                                                onDragStart(offset.y, stableIndex.value, stableAff.value)
+                                                onDragStart(
+                                                    offset.y,
+                                                    stableIndex.value,
+                                                    stableAff.value
+                                                )
                                             },
                                             onDragEnd = { onDragEnd() },
                                             onDragCancel = { onDragEnd() },

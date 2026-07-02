@@ -1,19 +1,16 @@
 package com.example.todolist.model.repository
 
-import com.example.todolist.model.dao.CategoryDao
-import com.example.todolist.model.dao.PriorityDao
 import com.example.todolist.model.dao.TodoAffairDao
-import com.example.todolist.model.entity.Category
-import com.example.todolist.model.entity.Priority
 import com.example.todolist.model.entity.TodoAffair
 import kotlinx.coroutines.flow.Flow
 
 class TodoRepository(
     private val todoDao: TodoAffairDao
 ) {
-    // 对外暴露Flow，供ViewModel转发（原有数据流不变）
-    fun observeTodoAll(): Flow<List<com.example.todolist.model.dao.TodoJoinData>> = todoDao.queryTodoJoinAll()
-    // 原MainActivity的数据库初始化逻辑完整迁移
+    // 对外暴露Flow，供ViewModel转发
+    fun observeTodoAll(): Flow<List<com.example.todolist.model.dao.TodoJoinData>> =
+        todoDao.queryTodoJoinAll()
+
     suspend fun initDefaultTableData() {
         // 3. 初始化默认待办
         val todoList = todoDao.getAllTodo()
@@ -33,53 +30,53 @@ class TodoRepository(
         }
     }
 
-//    新增待办入库
+    //    新增待办入库
     suspend fun insertNewTodo(todo: TodoAffair) {
         todoDao.insertTodo(todo)
     }
 
-//    获取最大排序号
+    //    获取最大排序号
     suspend fun getMaxSortOrder(): Int? {
-    return todoDao.getMaxSortOrder()
-}
+        return todoDao.getMaxSortOrder()
+    }
 
-//    根据id删除单条待办
+    //    根据id删除单条待办
     suspend fun deleteSingleTodoById(affId: Long) {
-    todoDao.deleteTodoById(affId)
-}
+        todoDao.deleteTodoById(affId)
+    }
 
-//    标记待办为已完成
+    //    标记待办为已完成
     suspend fun markTodoFinished(affId: Long) {
         todoDao.markTodoFinish(affId)
     }
 
-//    新增完整待办实体
+    //    新增完整待办实体
     suspend fun updateTodoItem(todo: TodoAffair) {
         todoDao.updateTodo(todo)
     }
 
-//    根据单条id查询原事务内容返回编辑列表
+    //    根据单条id查询原事务内容返回编辑列表
     suspend fun getTodoEntityById(affId: Long?): TodoAffair? {
-        if(affId == null) return null
+        if (affId == null) return null
         return todoDao.getTodoById(affId)
     }
 
-//    批量删除事务
+    //    批量删除事务
     suspend fun batchDeleteTodo(ids: List<Long>) {
         todoDao.batchDeleteTodo(ids)
     }
 
-//    批量更新待办排序
+    //    批量更新待办排序
     suspend fun batchUpdateTodoSort(todoList: List<TodoAffair>) {
         todoDao.batchUpdateTodo(todoList)
     }
 
-//    根据id查询单条原始待办（组装排序实体）
+    //    根据id查询单条原始待办（组装排序实体）
     suspend fun getTodoById(affId: Long): TodoAffair? {
         return todoDao.getTodoById(affId)
     }
 
-//     将待办标记为已弹出过期提醒
+    //     将待办标记为已弹出过期提醒
     suspend fun markTodoReminded(affId: Long) {
         todoDao.markTodoReminded(affId)
     }

@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.example.todolist.model.entity.Category
 
 @Composable
 fun AddCategoryDialog(
@@ -58,12 +57,10 @@ fun AddCategoryDialog(
                 )
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // 【核心修改】将外层 Column 改为 Row，实现横向并排
                 Row(modifier = Modifier.fillMaxWidth()) {
-
                     Button(
                         onClick = closeDialog,
-                        // 同样使用 weight(1f) 平分宽度
+                        // 使用 weight(1f) 平分宽度
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("取消")

@@ -31,11 +31,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val filterCategory: StateFlow<String> = _filterCategory.asStateFlow()
     private val _filterPriority = MutableStateFlow("全部等级")
     val filterPriority: StateFlow<String> = _filterPriority.asStateFlow()
+
     // 页面监听数据流
     val todoFlow: Flow<List<TodoJoinData>> = todoRepo.observeTodoAll()
     val categoryFlow: Flow<List<Category>> = categoryRepo.observeAllCategory()
     val priorityFlow: Flow<List<Priority>> = priorityRepo.observeAllPriority()
-    // 组合原始待办流 + 三个筛选条件，自动过滤
+
+//    搜索栏和标签过滤
     val filteredTodoListFlow: Flow<List<TodoJoinData>> = combine(
         todoFlow,
         _searchKeyword,
@@ -49,15 +51,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         var res = origin
         if (keyword.isNotBlank()) {
             val low = keyword.lowercase()
-            res = res.filter { it.title.lowercase().contains(low) || it.detail.lowercase().contains(low) }
+            res = res.filter {
+                it.title.lowercase().contains(low) || it.detail.lowercase().contains(low)
+            }
         }
         if (cate != "全部分类") res = res.filter { it.label == cate }
         if (prio != "全部等级") res = res.filter { it.levelName == prio }
         return@combine res
     }
 
-
-    // 对外更新筛选条件的方法（View仅调用，不持有状态）
+//    对外更新筛选条件
     fun updateSearchKeyword(text: String) {
         _searchKeyword.value = text
     }
@@ -70,7 +73,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _filterPriority.value = prioName
     }
 
-    // 【核心方法：首次创建数据库初始化默认数据】
+//    创建数据库的默认数据，从各个reposity获取
     fun initDatabaseDefaultData() {
         viewModelScope.launch {
             todoRepo.initDefaultTableData()
@@ -79,14 +82,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-//    新增分类对外接口
+    //    新增分类接口
     fun createCategory(labelText: String) {
         viewModelScope.launch(Dispatchers.IO) {
             categoryRepo.createNewCategory(labelText)
         }
     }
 
-//    删除分类前置校验
+    //    删除分类前置校验
     fun checkAndDeleteCategory(cataId: Long, onCannotDelete: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             // 调用分类仓库查询该分类待办数量
@@ -97,51 +100,51 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     onCannotDelete()
                 }
             } else {
-                // 无待办，执行删除
+                // 无待办时，执行删除
                 categoryRepo.deleteCategoryById(cataId)
             }
         }
     }
 
-//    新增待办对外接口
+    //    新增待办接口
     fun addNewTodo(todo: TodoAffair) {
         viewModelScope.launch(Dispatchers.IO) {
             todoRepo.insertNewTodo(todo)
         }
     }
 
-//    获取最大sort
+    //    获取最大sort
     suspend fun getMaxSortNum(): Int? {
         return todoRepo.getMaxSortOrder()
     }
 
-//    删除单条待办
+    //    删除单条待办
     fun deleteSingleTodo(affId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             todoRepo.deleteSingleTodoById(affId)
         }
     }
 
-//    标记完成待办
+    //    标记完成待办
     fun finishTodoItem(affId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             todoRepo.markTodoFinished(affId)
         }
     }
 
-//    编辑回填
+    //    编辑回填
     suspend fun getTodoEntity(affId: Long): TodoAffair? {
         return todoRepo.getTodoEntityById(affId)
     }
 
-//    保存编辑后的待办
+    //    保存编辑后的待办
     fun updateTodoEntity(todo: TodoAffair) {
         viewModelScope.launch(Dispatchers.IO) {
             todoRepo.updateTodoItem(todo)
         }
     }
 
-//    批量删除事务
+    //    批量删除事务
     fun batchDeleteTodo(ids: List<Long>, onFinish: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             todoRepo.batchDeleteTodo(ids)
@@ -151,14 +154,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-//    批量更新拖拽顺序
+    //    批量更新拖拽顺序
     fun updateTodoSort(updatedTodoList: List<TodoAffair>) {
         viewModelScope.launch(Dispatchers.IO) {
             todoRepo.batchUpdateTodoSort(updatedTodoList)
         }
     }
 
-//    标记待办已提醒，不再重复弹窗
+    //    标记待办已提醒，不再重复弹窗
     fun setTodoReminded(affId: Long) {
         viewModelScope.launch(Dispatchers.IO) {
             todoRepo.markTodoReminded(affId)

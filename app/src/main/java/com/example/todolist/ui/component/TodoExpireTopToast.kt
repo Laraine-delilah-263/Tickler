@@ -8,7 +8,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,7 +23,6 @@ fun TodoExpireTopToast(
     expireTodo: TodoJoinData,
     onDismiss: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
         delay(5000)
         onDismiss()
@@ -41,16 +39,15 @@ fun TodoExpireTopToast(
                 .fillMaxWidth(0.4f)
                 .wrapContentHeight(),
             shape = RoundedCornerShape(20.dp),
-            // 新配色：暖橙浅底色 + 深色文字，视觉突出不刺眼
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFFFF3E0) // 浅橙米色底色
+                containerColor = Color(0xFFFFF3E0)
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp) // 增加阴影，分层更明显
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp) // 增加阴影分层
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(12.dp), // 加大内边距，更饱满
+                    .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Image(
@@ -59,13 +56,12 @@ fun TodoExpireTopToast(
                     modifier = Modifier
                         .size(26.dp)
                         .padding(end = 8.dp),
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(Color(0xFFF57C00)) // 图标橙色调统一
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "待办截止提醒",
                         fontSize = 14.sp,
-                        color = Color(0xFFE65100), // 深橙标题，强化提醒
+                        color = Color(0xFFE65100),
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )

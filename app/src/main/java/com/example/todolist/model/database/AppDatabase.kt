@@ -14,7 +14,7 @@ import com.example.todolist.model.entity.Category
 import com.example.todolist.model.entity.Priority
 import com.example.todolist.model.entity.TodoAffair
 
-//用于定义数据库中的关键信息，包括数据库版本号，包含实体类和提供Dao层的访问实例
+//Database用于定义数据库中的关键信息，包括数据库版本号，包含实体类和提供Dao层的访问实例
 @Database(
     entities = [TodoAffair::class, Category::class, Priority::class],
     version = 3,
@@ -27,7 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         //    数据库实例
-        private var db: AppDatabase?=null
+        private var db: AppDatabase? = null
 
         // 定义迁移：版本1 → 版本2，新增 hasReminded 字段，默认值0
         private val MIGRATION_1_TO_2 = object : Migration(1, 2) {
@@ -51,18 +51,20 @@ abstract class AppDatabase : RoomDatabase() {
         @Synchronized
 //        Synchronized线程安全注解。它保证了 getDatabase 这个方法同一时间只能被一个线程调用。
 //        防止多线程环境下两个线程同时发现 db 是空的，各自创建新的数据库实例，破坏单例的唯一性。
-        fun getDatabase(context: Context):AppDatabase{
+        fun getDatabase(context: Context): AppDatabase {
             db?.let {
                 return it
             }
-            return Room.databaseBuilder(context.applicationContext,
-                AppDatabase::class.java, "todo_database")
+            return Room.databaseBuilder(
+                context.applicationContext,
+                AppDatabase::class.java, "todo_database"
+            )
 //                .fallbackToDestructiveMigration()//没有配置迁移就销毁旧表重建
                 //                允许在主线程中进行数据库操作
-                .addMigrations(MIGRATION_1_TO_2,MIGRATION_2_TO_3)//注册全部迁移
+                .addMigrations(MIGRATION_1_TO_2, MIGRATION_2_TO_3)//注册全部迁移
                 .allowMainThreadQueries()
-                .build().apply{
-                    db=this
+                .build().apply {
+                    db = this
                 }
         }
     }

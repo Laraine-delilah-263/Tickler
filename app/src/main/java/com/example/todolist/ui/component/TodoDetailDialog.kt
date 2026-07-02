@@ -61,7 +61,7 @@ fun TodoDetailDialog(
     var prioExpanded by remember { mutableStateOf(false) }
     var showDatePage by remember { mutableStateOf(true) }
 
-    // 严格参考新增弹窗：禁止选择过去日期，只能选择今日及以后
+    // 禁用过去日期，只能选择今日及以后
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = todo.endTime,
         selectableDates = object : SelectableDates {
@@ -75,7 +75,8 @@ fun TodoDetailDialog(
         }
     )
 
-    val localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(todo.endTime), ZoneId.systemDefault())
+    val localDateTime =
+        LocalDateTime.ofInstant(Instant.ofEpochMilli(todo.endTime), ZoneId.systemDefault())
     val timePickerState = rememberTimePickerState(
         initialHour = localDateTime.hour,
         initialMinute = localDateTime.minute,
@@ -138,7 +139,13 @@ fun TodoDetailDialog(
                         Text("分类：${todo.label ?: "未分类"}", color = textColor)
                         Text("优先级：${todo.levelName}", color = textColor)
                         Text(
-                            "截止时间：${localDateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}",
+                            "截止时间：${
+                                localDateTime.format(
+                                    java.time.format.DateTimeFormatter.ofPattern(
+                                        "yyyy-MM-dd HH:mm"
+                                    )
+                                )
+                            }",
                             color = textColor
                         )
                         val finishStr = if (todo.isFinish == 1) "已完成" else "未完成"
@@ -248,15 +255,23 @@ fun TodoDetailDialog(
                         Button(
                             onClick = {
                                 val zone = ZoneId.systemDefault()
-                                val selectedDate = datePickerState.selectedDateMillis ?: todo.endTime
-                                val date = Instant.ofEpochMilli(selectedDate).atZone(zone).toLocalDate()
+                                val selectedDate =
+                                    datePickerState.selectedDateMillis ?: todo.endTime
+                                val date =
+                                    Instant.ofEpochMilli(selectedDate).atZone(zone).toLocalDate()
                                 val finalTime = date
                                     .atTime(timePickerState.hour, timePickerState.minute)
                                     .atZone(zone)
                                     .toInstant()
                                     .toEpochMilli()
 
-                                onUpdateTodo(titleText, contentText, selectedCate?.cataId, selectedPrio?.prioId, finalTime)
+                                onUpdateTodo(
+                                    titleText,
+                                    contentText,
+                                    selectedCate?.cataId,
+                                    selectedPrio?.prioId,
+                                    finalTime
+                                )
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {

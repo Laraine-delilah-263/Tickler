@@ -33,6 +33,6 @@ data class TodoAffair(
     val isFinish: Int = 0,//是否完成
     val categoryId: Long?,
     val priorityId: Long?,
-    val hasReminded:Int=0,
+    val hasReminded: Int = 0,
     var sortOrder: Int = 0
 )
