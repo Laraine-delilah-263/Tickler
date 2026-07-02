@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 class PriorityRepository(private val priorityDao: PriorityDao) {
     fun observeAllPriority(): Flow<List<Priority>> = priorityDao.getAllPriority()
+    fun getAllPriorityFlow(): Flow<List<Priority>> = priorityDao.getAllPriority()
 
     // 优先级表初始化方法
     suspend fun initDefaultPriority() {

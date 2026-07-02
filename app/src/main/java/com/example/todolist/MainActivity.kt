@@ -20,6 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.todolist.ui.component.BottomStatusBar
 import com.example.todolist.ui.component.FilterBar
 import com.example.todolist.ui.component.LeftSideBar
@@ -28,9 +29,6 @@ import com.example.todolist.ui.component.TopNavigationBar
 import com.example.todolist.ui.theme.TodoListTheme
 //数据库依赖
 import com.example.todolist.model.dao.TodoJoinData
-import com.example.todolist.model.database.AppDatabase
-import com.example.todolist.model.entity.Category
-import com.example.todolist.model.entity.Priority
 import com.example.todolist.model.entity.TodoAffair
 import com.example.todolist.ui.component.AddTodoDialog
 import kotlinx.coroutines.Dispatchers
@@ -41,21 +39,15 @@ import com.example.todolist.ui.component.AddCategoryDialog
 import com.example.todolist.ui.component.TodoDetailDialog
 import com.example.todolist.viewmodel.MainViewModel
 import com.example.todolist.viewmodel.MainViewModelFactory
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLifecycleOwner
 
 class MainActivity : ComponentActivity() {
-
     // 新增：获取ViewModel实例
     private val mainVm: MainViewModel by viewModels {
         MainViewModelFactory(application)
     }
-
-    //初始化数据库与Dao
-    private val db by lazy { AppDatabase.getDatabase(applicationContext) }
-    private val todoDao by lazy { db.todoDao() }
-    private val categoryDao by lazy { db.categoryDao() }
-    private val priorityDao by lazy { db.priorityDao() }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        数据库和表的创建
@@ -78,73 +70,51 @@ class MainActivity : ComponentActivity() {
 //                弹窗状态
                 var showExpireDialog by remember { mutableStateOf(false) }
                 var currentExpireTodo by remember { mutableStateOf<TodoJoinData?>(null) }
-//                var remindedTodoIds = remember { mutableStateListOf<Long>() }
                 var isSearchFocused by remember { mutableStateOf(false) }
 //                全局共享焦点
                 val searchFocusRequester = remember { FocusRequester() }
                 val keyboardController = LocalSoftwareKeyboardController.current
                 var isDarkMode by remember { mutableStateOf(false) }
-                var searchText by remember { mutableStateOf("") }
 //                待办数据列表
                 val scope = rememberCoroutineScope()
                 //弹窗控制标记
                 var openAddDialog by remember { mutableStateOf(false) }
-                // 存储数据库联查完整数据
-                var todoDataSource by remember { mutableStateOf<List<TodoJoinData>>(emptyList()) }
-                var allCategory by remember { mutableStateOf<List<Category>>(emptyList()) }
-                var allPriority by remember { mutableStateOf<List<Priority>>(emptyList()) }
-//                标签筛选
-                var selectCategory by remember { mutableStateOf("全部分类") }
-                var selectPriority by remember { mutableStateOf("全部等级") }
-//                根据搜索文本过滤待办列表
-                val filterTodoList =
-                    remember(searchText, todoDataSource, selectCategory, selectPriority) {
-                        var list = todoDataSource
-                        // 1.搜索文本过滤，必须赋值回list
-                        if (searchText.isNotBlank()) {
-                            val keyword = searchText.trim().lowercase()
-                            list = list.filter { todo ->
-                                todo.title.lowercase().contains(keyword) || todo.detail.lowercase().contains(keyword)
-                            }
-                        }
-                        // 2.分类过滤
-                        if (selectCategory != "全部分类") {
-                            list = list.filter { it.label == selectCategory }
-                        }
-                        // 3. 优先级过滤
-                        if (selectPriority != "全部等级") {
-                            list = list.filter { it.levelName == selectPriority }
-                        }
-                        return@remember list
-                    }
-                // 监听数据库变化，自动刷新事务列表
-                LaunchedEffect(Unit) {
-                    todoDao.queryTodoJoinAll().collect { list ->
-                        todoDataSource = list
-                    }
-                }
-//                加载全部分类数据
-                LaunchedEffect(Unit) {
-                    categoryDao.getAllCategory().collect { cateList ->
-                        allCategory = cateList
-                    }
-                }
-//                优先级
-                LaunchedEffect(Unit) {
-                    priorityDao.getAllPriority().collect { prioList ->
-                        allPriority = prioList
-                    }
-                }
+                val lifecycleOwner = LocalLifecycleOwner.current
+
+                val currentSearch by mainVm.searchKeyword.collectAsStateWithLifecycle(
+                    initialValue = "",
+                    lifecycle = lifecycleOwner.lifecycle
+                )
+                val currentCateFilter by mainVm.filterCategory.collectAsStateWithLifecycle(
+                    initialValue = "全部分类",
+                    lifecycle = lifecycleOwner.lifecycle
+                )
+                val currentPrioFilter by mainVm.filterPriority.collectAsStateWithLifecycle(
+                    initialValue = "全部等级",
+                    lifecycle = lifecycleOwner.lifecycle
+                )
+                val filterTodoList by mainVm.filteredTodoListFlow.collectAsStateWithLifecycle(
+                    initialValue = emptyList(),
+                    lifecycle = lifecycleOwner.lifecycle
+                )
+                val allCategory by mainVm.categoryFlow.collectAsStateWithLifecycle(
+                    initialValue = emptyList(),
+                    lifecycle = lifecycleOwner.lifecycle
+                )
+                val allPriority by mainVm.priorityFlow.collectAsStateWithLifecycle(
+                    initialValue = emptyList(),
+                    lifecycle = lifecycleOwner.lifecycle
+                )
 
                 // 实时检测过期未完成待办
-                LaunchedEffect(todoDataSource) {
+                LaunchedEffect(filterTodoList) {
                     while(true){
                         val nowTime = System.currentTimeMillis()
                         if(showExpireDialog){
                             delay(1000)
                             continue
                         }
-                        val expireTodo = todoDataSource.firstOrNull { todo ->
+                        val expireTodo = filterTodoList.firstOrNull { todo ->
                             // 条件：截止时间 < 当前时间 + 未完成 + 未提醒过
                             todo.endTime < nowTime
                                     && todo.isExpired == 0
@@ -204,8 +174,10 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         TopNavigationBar(
-                            searchText = searchText,
-                            onSearchChange = { searchText = it },
+                            searchText = currentSearch,
+                            onSearchChange = { inputText ->
+                                mainVm.updateSearchKeyword(inputText)
+                            },
                             textColor = textPrimary,
                             searchFocusRequester = searchFocusRequester,
                             globalKeyboardController = keyboardController,
@@ -237,12 +209,15 @@ class MainActivity : ComponentActivity() {
                                     dividerColor = dividerColor,
                                     categoryList = allCategory,
                                     priorityList = allPriority,
-                                    onCategorySelect = { selectCategory = it },
-                                    onPrioritySelect = { selectPriority = it },
-//                                    监听高亮
-                                    currentSelectCategory = selectCategory,
+                                    onCategorySelect = { cateName ->
+                                        mainVm.selectFilterCategory(cateName)
+                                    },
+                                    onPrioritySelect = { prioName ->
+                                        mainVm.selectFilterPriority(prioName)
+                                    },
+                                    currentSelectCategory = currentCateFilter,
+                                    currentSelectPriority = currentPrioFilter,
                                     batchDeleteMode = batchManageMode,
-                                    currentSelectPriority = selectPriority,
                                     onCateDeleteClick ={cate->
                                         mainVm.checkAndDeleteCategory(cate.cataId){
                                             showCateWarnDialog=true
@@ -272,7 +247,7 @@ class MainActivity : ComponentActivity() {
                                             scope.launch(Dispatchers.IO) {
                                                 // 按拖拽后的顺序重新赋值sortOrder
                                                 val updateData = newSortList.mapIndexed { index, joinData ->
-                                                    val originTodo = todoDao.getTodoById(joinData.affId)
+                                                    val originTodo = mainVm.getTodoEntity(joinData.affId)
                                                     originTodo?.copy(sortOrder = index)
                                                 }.filterNotNull()
                                                 mainVm.updateTodoSort(updateData)
@@ -355,7 +330,7 @@ class MainActivity : ComponentActivity() {
                         priorityList = allPriority,
                         onUpdateTodo = { title, content, cateId, prioId, endTime ->
                             scope.launch(Dispatchers.IO) {
-                                val originTodo = todoDao.getTodoById(currentTodo.affId) ?: return@launch
+                                val originTodo = mainVm.getTodoEntity(currentTodo.affId) ?: return@launch
                                 val nowTime = System.currentTimeMillis()
                                 val newIsExpiredInt = if (endTime < nowTime) 1 else 0
                                 val safeCateId = cateId ?: originTodo.categoryId
@@ -396,7 +371,7 @@ class MainActivity : ComponentActivity() {
                         scope.launch(Dispatchers.IO) {
                             val now = System.currentTimeMillis()
                             //标题固定，内容填输入文字，截止时间=当天+选定时分，分类/优先级暂时null
-                            val maxSort=todoDao.getMaxSortOrder()?:0
+                            val maxSort=mainVm.getMaxSortNum()?:0
                             val newTodo = TodoAffair(
                                 title = titleInput,
                                 detail = content,

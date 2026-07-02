@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.Flow
 class CategoryRepository(private val categoryDao: CategoryDao) {
     fun observeAllCategory(): Flow<List<Category>> = categoryDao.getAllCategory()
 
-
 //    分类表初始化方法
     suspend fun initDefaultCategory() {
         if (categoryDao.getCategoryList().isEmpty()) {

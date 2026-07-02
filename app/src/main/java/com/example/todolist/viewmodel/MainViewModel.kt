@@ -13,21 +13,62 @@ import com.example.todolist.model.repository.CategoryRepository
 import com.example.todolist.model.repository.PriorityRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Room数据库实例
     private val db = AppDatabase.getDatabase(application)
-
     private val todoRepo = TodoRepository(db.todoDao())
     private val categoryRepo = CategoryRepository(db.categoryDao())
     private val priorityRepo = PriorityRepository(db.priorityDao())
-
+    private val _searchKeyword = MutableStateFlow("")
+    val searchKeyword: StateFlow<String> = _searchKeyword.asStateFlow()
+    private val _filterCategory = MutableStateFlow("全部分类")
+    val filterCategory: StateFlow<String> = _filterCategory.asStateFlow()
+    private val _filterPriority = MutableStateFlow("全部等级")
+    val filterPriority: StateFlow<String> = _filterPriority.asStateFlow()
     // 页面监听数据流
     val todoFlow: Flow<List<TodoJoinData>> = todoRepo.observeTodoAll()
     val categoryFlow: Flow<List<Category>> = categoryRepo.observeAllCategory()
     val priorityFlow: Flow<List<Priority>> = priorityRepo.observeAllPriority()
+    // 组合原始待办流 + 三个筛选条件，自动过滤
+    val filteredTodoListFlow: Flow<List<TodoJoinData>> = combine(
+        todoFlow,
+        _searchKeyword,
+        _filterCategory,
+        _filterPriority
+    ) { args: Array<*> ->
+        val origin = args[0] as List<TodoJoinData>
+        val keyword = args[1] as String
+        val cate = args[2] as String
+        val prio = args[3] as String
+        var res = origin
+        if (keyword.isNotBlank()) {
+            val low = keyword.lowercase()
+            res = res.filter { it.title.lowercase().contains(low) || it.detail.lowercase().contains(low) }
+        }
+        if (cate != "全部分类") res = res.filter { it.label == cate }
+        if (prio != "全部等级") res = res.filter { it.levelName == prio }
+        return@combine res
+    }
 
+
+    // 对外更新筛选条件的方法（View仅调用，不持有状态）
+    fun updateSearchKeyword(text: String) {
+        _searchKeyword.value = text
+    }
+
+    fun selectFilterCategory(cateName: String) {
+        _filterCategory.value = cateName
+    }
+
+    fun selectFilterPriority(prioName: String) {
+        _filterPriority.value = prioName
+    }
 
     // 【核心方法：首次创建数据库初始化默认数据】
     fun initDatabaseDefaultData() {
