@@ -99,7 +99,6 @@ fun NoteListArea(
     val density = LocalDensity.current
     val autoScrollEdgePx = remember { with(density) { 40.dp.toPx() } }
     val autoScrollStepPx = remember { with(density) { 1.5.dp.toPx() } }
-
     // 拖拽状态
     var draggingAffId by remember { mutableStateOf<Long?>(null) }
     var dragStartIndex by remember { mutableIntStateOf(-1) }
@@ -107,15 +106,12 @@ fun NoteListArea(
     var dragStartFingerY by remember { mutableFloatStateOf(0f) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     var dragScrollOffset by remember { mutableFloatStateOf(0f) }
-
     val rowBounds = remember { mutableMapOf<Long, TodoRowBounds>() }
     var dragRowBounds by remember { mutableStateOf<Map<Long, TodoRowBounds>>(emptyMap()) }
     var dragSnapshotList by remember { mutableStateOf<List<TodoJoinData>>(emptyList()) }
-
     var listViewportTop by remember { mutableFloatStateOf(0f) }
     var listViewportBottom by remember { mutableFloatStateOf(0f) }
     val lazyListState = rememberLazyListState()
-
     val stableTodoList = rememberUpdatedState(todoList)
     val stableOnOrderChanged = rememberUpdatedState(onOrderChanged)
 
@@ -126,7 +122,6 @@ fun NoteListArea(
             var scrollDelta = 0f
             if (fingerY < listViewportTop + autoScrollEdgePx) scrollDelta = -autoScrollStepPx
             if (fingerY > listViewportBottom - autoScrollEdgePx) scrollDelta = autoScrollStepPx
-
             if (scrollDelta != 0f) {
                 val consumed = lazyListState.scrollBy(scrollDelta)
                 if (consumed != 0f) dragScrollOffset += consumed
@@ -155,24 +150,20 @@ fun NoteListArea(
         val snapshotItems = dragSnapshotList
         val sortedBounds = boundsMap.values.sortedBy { it.index }
         var targetInsert = snapshotItems.size
-
         // 遍历快照所有行，匹配视觉位置
         for (bounds in sortedBounds) {
             val visualTop = bounds.top - dragScrollOffset
             val visualBottom = bounds.bottom - dragScrollOffset
             val visualCenter = (visualTop + visualBottom) / 2f
-
             when {
                 fingerScreenY < visualCenter -> {
                     targetInsert = bounds.index
                     break
                 }
-
                 fingerScreenY < visualBottom -> {
                     targetInsert = bounds.index + 1
                     break
                 }
-
                 else -> targetInsert = bounds.index + 1
             }
         }
@@ -238,6 +229,7 @@ fun NoteListArea(
                 }
             }
 
+//            已完成事务划线标记
             val swipeState = rememberSwipeToDismissBoxState(
                 confirmValueChange = { dismissValue ->
                     if (batchMode) return@rememberSwipeToDismissBoxState false
@@ -246,18 +238,17 @@ fun NoteListArea(
                             onMarkComplete(todo.affId)
                             false
                         }
-
                         EndToStart -> {
                             onDeleteTodo(todo.affId)
                             true
                         }
-
                         else -> false
                     }
                 },
                 positionalThreshold = { totalWidth -> totalWidth * 0.3f }
             )
 
+            //左右滑动手势删除和完成标记
             SwipeToDismissBox(
                 state = swipeState,
                 enableDismissFromStartToEnd = !batchMode,
@@ -282,7 +273,6 @@ fun NoteListArea(
                                         Color(0xFF2196F3),
                                         progress
                                     )
-
                                     EndToStart -> lerp(
                                         Color.Transparent,
                                         Color(0xFFF44336),
@@ -305,14 +295,12 @@ fun NoteListArea(
                                 tint = Color.White,
                                 modifier = Modifier.padding(horizontal = 20.dp)
                             )
-
                             EndToStart -> Icon(
                                 painter = painterResource(id = R.drawable.delete),
                                 contentDescription = "删除事务",
                                 tint = Color.White,
                                 modifier = Modifier.padding(horizontal = 20.dp)
                             )
-
                             else -> Unit
                         }
                     }
@@ -391,6 +379,7 @@ fun NoteListArea(
                                 )
                             }
                             Text(
+                                //默认选择了日常事务
                                 text = todo.label ?: "未分类",
                                 color = Color.White.copy(alpha = dimAlpha),
                                 modifier = Modifier

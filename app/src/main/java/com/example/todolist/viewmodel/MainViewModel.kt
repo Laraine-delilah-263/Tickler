@@ -82,7 +82,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    //    新增分类接口
+    //    新增分类
     fun createCategory(labelText: String) {
         viewModelScope.launch(Dispatchers.IO) {
             categoryRepo.createNewCategory(labelText)
