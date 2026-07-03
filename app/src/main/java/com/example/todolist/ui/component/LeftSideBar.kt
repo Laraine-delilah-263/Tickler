@@ -63,21 +63,5 @@ fun LeftSideBar(
             color = dividerColor
         )
 
-//        Text(
-//            text = "快捷模板",
-//            style = MaterialTheme.typography.titleMedium,
-//            color = textColor
-//        )
-//        Spacer(modifier = Modifier.height(16.dp))
-//        listOf( "日常清单","语音速记","位置提醒").forEach { temp ->
-//            Text(
-//                text = temp,
-//                color = textColor,
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(vertical = 8.dp)
-//                    .clickable { }
-//            )
-//        }
     }
 }

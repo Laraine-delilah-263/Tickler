@@ -7,6 +7,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+// 长按拖拽手势核心API
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
@@ -100,22 +101,22 @@ fun NoteListArea(
     val autoScrollEdgePx = remember { with(density) { 40.dp.toPx() } }
     val autoScrollStepPx = remember { with(density) { 1.5.dp.toPx() } }
     // 拖拽状态
-    var draggingAffId by remember { mutableStateOf<Long?>(null) }
-    var dragStartIndex by remember { mutableIntStateOf(-1) }
-    var dragInsertionIndex by remember { mutableIntStateOf(-1) }
-    var dragStartFingerY by remember { mutableFloatStateOf(0f) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    var dragScrollOffset by remember { mutableFloatStateOf(0f) }
-    val rowBounds = remember { mutableMapOf<Long, TodoRowBounds>() }
-    var dragRowBounds by remember { mutableStateOf<Map<Long, TodoRowBounds>>(emptyMap()) }
-    var dragSnapshotList by remember { mutableStateOf<List<TodoJoinData>>(emptyList()) }
+    var draggingAffId by remember { mutableStateOf<Long?>(null) }// 当前正在拖拽的条目ID，null=无拖拽
+    var dragStartIndex by remember { mutableIntStateOf(-1) }// 拖拽原始下标
+    var dragInsertionIndex by remember { mutableIntStateOf(-1) }// 目标插入下标
+    var dragStartFingerY by remember { mutableFloatStateOf(0f) }// 手指按下初始Y坐标
+    var dragOffset by remember { mutableFloatStateOf(0f) }// 手指拖动偏移量
+    var dragScrollOffset by remember { mutableFloatStateOf(0f) }// 列表自动滚动补偿偏移
+    val rowBounds = remember { mutableMapOf<Long, TodoRowBounds>() }// 所有条目窗口坐标
+    var dragRowBounds by remember { mutableStateOf<Map<Long, TodoRowBounds>>(emptyMap()) }// 拖拽快照坐标
+    var dragSnapshotList by remember { mutableStateOf<List<TodoJoinData>>(emptyList()) }// 拖拽快照列表
     var listViewportTop by remember { mutableFloatStateOf(0f) }
     var listViewportBottom by remember { mutableFloatStateOf(0f) }
-    val lazyListState = rememberLazyListState()
+    val lazyListState = rememberLazyListState()// LazyColumn滚动控制器
     val stableTodoList = rememberUpdatedState(todoList)
     val stableOnOrderChanged = rememberUpdatedState(onOrderChanged)
 
-    // 边缘自动滚动
+    // 边缘自动滚动,只要处于拖拽状态就持续循环检测手指位置，自动上下滚动列表
     LaunchedEffect(draggingAffId) {
         while (draggingAffId != null) {
             val fingerY = dragStartFingerY + dragOffset - dragScrollOffset
@@ -132,19 +133,19 @@ fun NoteListArea(
 
     // 拖拽开始：快照完整列表+坐标，隔离实时列表干扰
     fun onDragStart(fingerY: Float, startIdx: Int, affId: Long) {
-        draggingAffId = affId
-        dragStartIndex = startIdx
-        dragInsertionIndex = startIdx
-        dragStartFingerY = fingerY
+        draggingAffId = affId//标记当前拖拽条目，不为空是，触发页面自动滚动协程执行
+        dragStartIndex = startIdx//保存原始下标
+        dragInsertionIndex = startIdx//初始插入位置=原位置
+        dragStartFingerY = fingerY//记录手指初始坐标Y
         dragOffset = 0f
         dragScrollOffset = 0f
-        dragSnapshotList = stableTodoList.value.toList()
-        dragRowBounds = rowBounds.toMap()
+        dragSnapshotList = stableTodoList.value.toList()//快照但钱列表，拖拽全程不依赖实时数据
+        dragRowBounds = rowBounds.toMap()//快照所有条目坐标
     }
 
     // 拖拽移动：基于快照列表遍历，支持远距离跨条目交换
     fun onDragMove(deltaY: Float) {
-        dragOffset += deltaY
+        dragOffset += deltaY//累加垂直拖动偏移
         val fingerScreenY = dragStartFingerY + dragOffset - dragScrollOffset
         val boundsMap = dragRowBounds
         val snapshotItems = dragSnapshotList
@@ -221,9 +222,10 @@ fun NoteListArea(
                 if (draggingAffId == null || start == -1 || insert == -1) return@run 0f
                 val bounds = dragRowBounds[todo.affId] ?: return@run 0f
                 val itemHeight = bounds.bottom - bounds.top
-
                 when {
+//                    向下拖拽，中间条目向上挪
                     insert > start && currentIndex in (start + 1) until insert -> -itemHeight
+//                    向上拖拽，中间条目向下挪
                     insert < start && currentIndex in insert until start -> itemHeight
                     else -> 0f
                 }
@@ -389,6 +391,7 @@ fun NoteListArea(
                                     )
                                     .padding(horizontal = 10.dp, vertical = 3.dp)
                             )
+//                            长按拖动图标
                             if (!batchMode) {
                                 val stableIndex = rememberUpdatedState(currentIndex)
                                 val stableAff = rememberUpdatedState(todo.affId)
