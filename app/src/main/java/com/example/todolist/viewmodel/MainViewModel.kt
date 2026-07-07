@@ -31,6 +31,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val filterCategory: StateFlow<String> = _filterCategory.asStateFlow()
     private val _filterPriority = MutableStateFlow("全部等级")
     val filterPriority: StateFlow<String> = _filterPriority.asStateFlow()
+    //保存待删除的todoid，null表示没有删除项，有值表示触发删除等待确认
+    private val _pendingDeleteId=MutableStateFlow<Long?>(null)
+    //对外暴露的只读流
+    val pendingDeleteId=_pendingDeleteId.asStateFlow()
 
     // 页面监听数据流
     val todoFlow: Flow<List<TodoJoinData>> = todoRepo.observeTodoAll()
@@ -166,6 +170,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             todoRepo.markTodoReminded(affId)
         }
+    }
+
+    //删除确认弹窗
+    fun requestDeleteTodo(todId:Long){
+        _pendingDeleteId.value=todId
+    }
+
+    //事务删除逻辑，并重置状态
+    fun confirmDeleteTodo(){
+        val id=_pendingDeleteId.value
+        if(id!=null){
+            viewModelScope.launch(Dispatchers.IO) {
+                todoRepo.deleteSingleTodoById(id)
+            }
+            //删除返回重置状态
+            _pendingDeleteId.value=null
+        }
+    }
+
+    //取消删除确认
+    fun cancleDeleTodo(){
+        _pendingDeleteId.value=null
     }
 
 }

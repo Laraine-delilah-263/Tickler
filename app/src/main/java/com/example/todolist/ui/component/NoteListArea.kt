@@ -86,17 +86,20 @@ fun NoteListArea(
     textColor: Color,
     selectStroke: Color,
     mainColor: Color,
-    onDeleteTodo: (Long) -> Unit,
+    onRequestDelete: (Long) -> Unit,
     onMarkComplete: (Long) -> Unit,
     onOrderChanged: (List<TodoJoinData>) -> Unit,
     batchMode: Boolean,
     selectedIds: List<Long>,
     onToggleSelect: (Long) -> Unit,
-    onClickTodoItem: (TodoJoinData) -> Unit
+    onClickTodoItem: (TodoJoinData) -> Unit,
+//    pendingDeleteId:Long?,
 ) {
     val dateFormatter = remember {
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
     }
+    //存储等待删除的数据
+    var todoIdDelete by remember { mutableStateOf<Long?>(null) }
     val density = LocalDensity.current
     val autoScrollEdgePx = remember { with(density) { 40.dp.toPx() } }
     val autoScrollStepPx = remember { with(density) { 1.5.dp.toPx() } }
@@ -241,14 +244,21 @@ fun NoteListArea(
                             false
                         }
                         EndToStart -> {
-                            onDeleteTodo(todo.affId)
-                            true
+                            onRequestDelete(todo.affId)
+                            false//阻止自动消失
                         }
                         else -> false
                     }
                 },
                 positionalThreshold = { totalWidth -> totalWidth * 0.3f }
             )
+
+            //监听pendingDeleteId变化，如果和todoid不匹配，说明删除被取消，swipeState重置为未滑动状态
+//            LaunchedEffect(pendingDeleteId) {
+//                if(pendingDeleteId!=todo.affId){
+//                    swipeState.reset()
+//                }
+//            }
 
             //左右滑动手势删除和完成标记
             SwipeToDismissBox(

@@ -52,6 +52,8 @@ class MainActivity : ComponentActivity() {
         mainVm.initDatabaseDefaultData()
         setContent {
             TodoListTheme {
+//                事务删除：收集待删除事务id状态
+                val pendingDeleteId by mainVm.pendingDeleteId.collectAsStateWithLifecycle()
 //                分类删除弹窗
                 var showCateWarnDialog by remember { mutableStateOf(false) }
 //                详情弹窗
@@ -103,6 +105,7 @@ class MainActivity : ComponentActivity() {
                 )
 
                 // 实时检测过期未完成待办
+                //LaunchedEffect:在 Composable 函数的生命周期内安全地启动和管理协程
                 LaunchedEffect(filterTodoList) {
                     while (true) {
                         val nowTime = System.currentTimeMillis()
@@ -232,9 +235,10 @@ class MainActivity : ComponentActivity() {
                                         mainColor = mainColor,
                                         todoList = filterTodoList,
                                         selectStroke = selectStrokeColor,
-                                        onDeleteTodo = { targetTodoId ->
-                                            mainVm.deleteSingleTodo(targetTodoId)
+                                        onRequestDelete = { targetTodoId ->
+                                            mainVm.requestDeleteTodo(targetTodoId)
                                         },
+//                                        pendingDeleteId = pendingDeleteId,
                                         onMarkComplete = { targetTodoId ->
                                             mainVm.finishTodoItem(targetTodoId)
                                         },
@@ -404,6 +408,28 @@ class MainActivity : ComponentActivity() {
                         confirmButton = {
                             androidx.compose.material3.TextButton(onClick = {
                                 showCateWarnDialog = false
+                            }) {
+                                Text("确定")
+                            }
+                        }
+                    )
+                }
+                //                分类存在待办时的提醒弹窗
+                if (pendingDeleteId!=null) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { mainVm.cancleDeleTodo() },//点击背景或返回键取消
+                        title = { Text("确认删除") },
+                        text = { Text("确认删除该条待办事项吗？此操作无法撤销。") },
+                        dismissButton = {
+                            androidx.compose.material3.TextButton(onClick = {
+                                mainVm.cancleDeleTodo()
+                            }) {
+                                Text("取消")
+                            }
+                        },
+                        confirmButton = {
+                            androidx.compose.material3.TextButton(onClick = {
+                                mainVm.confirmDeleteTodo()
                             }) {
                                 Text("确定")
                             }

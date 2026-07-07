@@ -34,7 +34,6 @@ fun TopNavigationBar(
     onFocusChange: (Boolean) -> Unit,
     isSearchFocused: Boolean
 ) {
-    val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     Row(
         modifier = Modifier
@@ -110,8 +109,8 @@ fun TopNavigationBar(
                 singleLine = true,//输入控制
                 shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = textColor.copy(alpha = 0.55f), //获取焦点(点击输入)边框色75%透明度
-                    unfocusedBorderColor = textColor.copy(alpha = 0.35f), //失焦(未点击)边框色35%透明度
+                    focusedBorderColor = textColor.copy(alpha = 0.55f), //获取焦点，点击输入时边框色75%透明度
+                    unfocusedBorderColor = textColor.copy(alpha = 0.35f), //失焦：未点击时边框色35%透明度
                     focusedContainerColor = Color.Transparent, //选中时输入框背景：完全透明
                     unfocusedContainerColor = Color.Transparent //未选中输入框背景：完全透明
                 )

@@ -132,4 +132,7 @@ dependencies {
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1")
 
+//    长按排序依赖
+    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+
 }
