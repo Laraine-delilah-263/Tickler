@@ -1,17 +1,19 @@
 package com.example.todolist.model.repository
 
+import com.example.todolist.model.dao.CategoryDao
 import com.example.todolist.model.dao.TodoAffairDao
 import com.example.todolist.model.entity.TodoAffair
 import kotlinx.coroutines.flow.Flow
 
 class TodoRepository(
-    private val todoDao: TodoAffairDao
+    private val todoDao: TodoAffairDao,
 ) {
     // 对外暴露Flow，供ViewModel转发
     fun observeTodoAll(): Flow<List<com.example.todolist.model.dao.TodoJoinData>> =
         todoDao.queryTodoJoinAll()
 
     suspend fun initDefaultTableData() {
+
         // 3. 初始化默认待办
         val todoList = todoDao.getAllTodo()
         if (todoList.isEmpty()) {
@@ -23,7 +25,7 @@ class TodoRepository(
                 startTime = now,
                 endTime = endTime,
                 categoryId = 1,
-                priorityId = 1,
+                priorityId = 4,
                 hasReminded = 0
             )
             todoDao.insertTodo(todo)
@@ -80,5 +82,8 @@ class TodoRepository(
     suspend fun markTodoReminded(affId: Long) {
         todoDao.markTodoReminded(affId)
     }
+
+    //分类标签校验
+
 
 }

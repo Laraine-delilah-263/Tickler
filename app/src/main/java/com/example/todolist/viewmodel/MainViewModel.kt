@@ -80,9 +80,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 //    创建数据库的默认数据，从各个reposity获取
     fun initDatabaseDefaultData() {
         viewModelScope.launch {
-            todoRepo.initDefaultTableData()
             categoryRepo.initDefaultCategory()
             priorityRepo.initDefaultPriority()
+            todoRepo.initDefaultTableData()
         }
     }
 
