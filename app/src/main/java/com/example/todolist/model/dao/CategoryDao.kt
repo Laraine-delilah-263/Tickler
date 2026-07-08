@@ -13,9 +13,11 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CategoryDao {
 
+    //在联查表查询指定分类下是否存在事务（删除分类标签前置检查）
     @Query("SELECT COUNT(*) FROM todo_affair WHERE categoryId = :cateId")
     suspend fun countTodoByCategory(cateId: Long): Int
 
+    //按照指定id删除分类标签（批量删除按钮进入）
     @Query("DELETE FROM category WHERE cataId = :cateId")
     suspend fun deleteCategory(cateId: Long)
 
@@ -23,7 +25,7 @@ interface CategoryDao {
     @Query("UPDATE todo_affair SET hasReminded = 1 WHERE affId = :todoId")
     suspend fun markTodoReminded(todoId: Long)
 
-    //    挂起查询，一次性查询，用于按钮查询逻辑
+    //    挂起查询，查询全部分类
     @Query("SELECT * FROM category")
     suspend fun getCategoryList(): List<Category>
 

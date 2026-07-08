@@ -29,7 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
         //    数据库实例
         private var db: AppDatabase? = null
 
-        // 定义迁移：版本1 → 版本2，新增 hasReminded 字段，默认值0
+        // 迁移：版本1 → 版本2，新增hasReminded字段，默认值0
         private val MIGRATION_1_TO_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // 给 todo_affair 表新增 hasReminded 整数字段，非空默认0

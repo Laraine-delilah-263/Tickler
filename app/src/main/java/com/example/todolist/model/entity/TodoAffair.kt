@@ -29,7 +29,7 @@ data class TodoAffair(
     val detail: String,
     val startTime: Long,
     val endTime: Long,
-    val isExpired: Int = 0,//是否过期
+    val isExpired: Int = 0,//是否过期，0为未完成，1为完成
     val isFinish: Int = 0,//是否完成
     val categoryId: Long?,
     val priorityId: Long?,

@@ -8,7 +8,7 @@ class MainViewModelFactory(private val app: Application) : ViewModelProvider.Fac
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
-            return MainViewModel(app) as T
+            return MainViewModel(app) as T//T泛型，函数要求回传泛型
         }
         throw IllegalArgumentException("Unknown ViewModel Class")
     }

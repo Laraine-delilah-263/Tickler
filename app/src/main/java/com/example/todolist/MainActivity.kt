@@ -42,7 +42,9 @@ import com.example.todolist.viewmodel.MainViewModelFactory
 import androidx.compose.ui.platform.LocalLifecycleOwner
 
 class MainActivity : ComponentActivity() {
-    // 获取ViewModel实例
+
+    // 获取ViewModel实例拦截系统的 ViewModel 创建过程，手动注入了 Application 依赖，
+    // 让带有自定义参数的 ViewModel 能够被正常创建和使用。
     private val mainVm: MainViewModel by viewModels {
         MainViewModelFactory(application)
     }
@@ -110,7 +112,7 @@ class MainActivity : ComponentActivity() {
                     while (true) {
                         val nowTime = System.currentTimeMillis()
                         if (showExpireDialog) {
-                            delay(1000)
+                            delay(1000)//每秒检测一次待办是否过期
                             continue
                         }
                         val expireTodo = filterTodoList.firstOrNull { todo ->

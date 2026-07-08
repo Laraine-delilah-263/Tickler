@@ -12,15 +12,20 @@ import kotlinx.coroutines.flow.Flow
 //事务数据访问对象，对数据库的各项操作进行封装
 @Dao
 interface TodoAffairDao {
+
+    //挂起查询，统计指定分类下有多少条待办事项
     @Query("SELECT COUNT(*) FROM todo_affair WHERE categoryId = :cateId")
     suspend fun countTodoByCategory(cateId: Long): Int
 
+    //更新待办
     @Update
     suspend fun updateTodo(todo: TodoAffair)
 
+    //选择最大排序的待办
     @Query("SELECT MAX(sortOrder) FROM todo_affair")
     suspend fun getMaxSortOrder(): Int?
 
+    //异步批量更新多条待办事项
     @Update
     suspend fun batchUpdateTodo(todoList: List<TodoAffair>)
 
@@ -32,6 +37,7 @@ interface TodoAffairDao {
     @Query("UPDATE todo_affair SET hasReminded = 1 WHERE affId = :id")
     suspend fun markTodoReminded(id: Long)
 
+    //已完成待办isFinish字段置1
     @Query("UPDATE todo_affair SET isFinish = 1 WHERE affId = :id")
     suspend fun markTodoFinish(id: Long)
 
